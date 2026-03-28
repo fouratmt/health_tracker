@@ -1,6 +1,14 @@
 (function () {
+  function pad(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function toLocalDateKey(date) {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+
   function getTodayISODate() {
-    return new Date().toISOString().slice(0, 10);
+    return toLocalDateKey(new Date());
   }
 
   function parseISODate(dateString) {
@@ -19,8 +27,9 @@
     return dateString.slice(0, 7);
   }
 
-  function toDateKey(date) {
-    return date.toISOString().slice(0, 10);
+  function differenceInDays(laterDateString, earlierDateString) {
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((parseISODate(laterDateString) - parseISODate(earlierDateString)) / msPerDay);
   }
 
   function sortLogs(logs) {
@@ -105,10 +114,18 @@
   function calculateStreak(logs, predicate) {
     const entries = sortLogs(logs).slice().reverse();
     let streak = 0;
+    let previousDate = null;
 
     for (let index = 0; index < entries.length; index += 1) {
-      if (predicate(entries[index])) {
+      const entry = entries[index];
+
+      if (previousDate !== null && differenceInDays(previousDate, entry.date) !== 1) {
+        break;
+      }
+
+      if (predicate(entry)) {
         streak += 1;
+        previousDate = entry.date;
       } else {
         break;
       }
@@ -133,6 +150,12 @@
       total,
       percentage: total === 0 ? 0 : Math.round((hits / total) * 100),
     };
+  }
+
+  function countHits(entries, key) {
+    return entries.filter(function (entry) {
+      return !!entry[key];
+    }).length;
   }
 
   function calculateWeightTrend(logs) {
@@ -230,21 +253,34 @@
 
   function buildSummary(state) {
     const todayDate = getTodayISODate();
+    const todayDateValue = parseISODate(todayDate);
+    const allEntries = sortLogs(state.logs);
     const todayLog = state.logs[todayDate] || null;
     const todayEvaluation = evaluateDailyLog(todayLog, state.goals, state.logs);
     const weekStart = getWeekStart(todayDate);
     const monthKey = getMonthKey(todayDate);
+    const currentWeekEntries = allEntries.filter(function (entry) {
+      const entryDate = parseISODate(entry.date);
+      return entryDate >= weekStart && entryDate <= todayDateValue;
+    });
+    const currentMonthEntries = allEntries.filter(function (entry) {
+      const entryDate = parseISODate(entry.date);
+      return getMonthKey(entry.date) === monthKey && entryDate <= todayDateValue;
+    });
 
     const weeklyAdherence = calculatePeriodAdherence(state.logs, state.goals, function (entry) {
-      return parseISODate(entry.date) >= weekStart;
+      const entryDate = parseISODate(entry.date);
+      return entryDate >= weekStart && entryDate <= todayDateValue;
     });
 
     const monthlyAdherence = calculatePeriodAdherence(state.logs, state.goals, function (entry) {
-      return getMonthKey(entry.date) === monthKey;
+      const entryDate = parseISODate(entry.date);
+      return getMonthKey(entry.date) === monthKey && entryDate <= todayDateValue;
     });
 
     const overallStatus = deriveOverallStatus(todayEvaluation, weeklyAdherence, monthlyAdherence);
     const weightTrend = calculateWeightTrend(state.logs);
+    const latestEntry = allEntries.length ? allEntries[allEntries.length - 1] : null;
 
     return {
       todayDate,
@@ -258,12 +294,18 @@
       }),
       slippingMetrics: calculateSlippingMetrics(state.logs, state.goals),
       weightTrend,
-      recentEntries: sortLogs(state.logs).slice(-7).reverse(),
+      recentEntries: allEntries.slice(-7).reverse(),
+      latestEntry,
+      loggedDays: allEntries.length,
+      weeklyWorkoutCount: countHits(currentWeekEntries, "workoutDone"),
+      monthlyCaloriesHits: countHits(currentMonthEntries, "caloriesOnTarget"),
+      monthlyProteinHits: countHits(currentMonthEntries, "proteinOnTarget"),
     };
   }
 
   window.HealthTrackerCalculations = {
     buildSummary,
     evaluateDailyLog,
+    getTodayISODate,
   };
 })();

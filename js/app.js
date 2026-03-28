@@ -3,18 +3,10 @@
   const calculations = window.HealthTrackerCalculations;
 
   let state = storage.loadState();
+  let selectedDate = calculations.getTodayISODate();
 
   function byId(id) {
     return document.getElementById(id);
-  }
-
-  function setFeedback(id, text) {
-    byId(id).textContent = text;
-    window.setTimeout(function () {
-      if (byId(id).textContent === text) {
-        byId(id).textContent = "";
-      }
-    }, 3000);
   }
 
   function formatPercentage(value) {
@@ -34,13 +26,75 @@
     return Number.isNaN(parsed) ? null : parsed;
   }
 
+  function setFeedback(id, text) {
+    byId(id).textContent = text;
+    window.setTimeout(function () {
+      if (byId(id).textContent === text) {
+        byId(id).textContent = "";
+      }
+    }, 3000);
+  }
+
   function saveAndRender(nextState) {
     state = storage.saveState(nextState);
     render();
   }
 
-  function renderSummaryList(elementId, items, emptyText) {
+  function formatDateLong(dateString) {
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(`${dateString}T00:00:00`));
+  }
+
+  function formatDateShort(dateString) {
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+    }).format(new Date(`${dateString}T00:00:00`));
+  }
+
+  function describeScoreStatus(hasEntry, hits, total) {
+    if (!hasEntry || total === 0) {
+      return {
+        label: "Awaiting entry",
+        className: "muted-chip",
+      };
+    }
+
+    const percentage = Math.round((hits / total) * 100);
+
+    if (percentage >= 80) {
+      return {
+        label: "On track",
+        className: "status-on-track",
+      };
+    }
+
+    if (percentage >= 60) {
+      return {
+        label: "Slightly off track",
+        className: "status-slightly-off-track",
+      };
+    }
+
+    return {
+      label: "Off track",
+      className: "status-off-track",
+    };
+  }
+
+  function setToken(id, baseClassName, label, toneClassName) {
+    const element = byId(id);
+    element.textContent = label;
+    element.className = `${baseClassName} ${toneClassName}`;
+  }
+
+  function renderCompactList(elementId, items, emptyText) {
     const element = byId(elementId);
+
     if (!items.length) {
       element.innerHTML = `<li><strong>${emptyText}</strong><span></span></li>`;
       return;
@@ -53,71 +107,209 @@
       .join("");
   }
 
+  function renderBreakdownList(elementId, items, emptyText) {
+    const element = byId(elementId);
+
+    if (!items.length) {
+      element.innerHTML = `<li><div class="list-row-head"><strong>${emptyText}</strong><span class="list-badge muted-chip">No data</span></div><span></span></li>`;
+      return;
+    }
+
+    element.innerHTML = items
+      .map(function (item) {
+        return `
+          <li>
+            <div class="list-row-head">
+              <strong>${item.title}</strong>
+              <span class="list-badge ${item.toneClass}">${item.badge}</span>
+            </div>
+            <span>${item.detail}</span>
+          </li>
+        `;
+      })
+      .join("");
+  }
+
+  function buildAverage(values) {
+    if (!values.length) {
+      return null;
+    }
+
+    return values.reduce(function (sum, value) {
+      return sum + value;
+    }, 0) / values.length;
+  }
+
+  function getSelectedLog() {
+    return state.logs[selectedDate] || null;
+  }
+
+  function populateCheckinForm() {
+    const form = byId("checkin-form");
+    const selectedLog = getSelectedLog();
+
+    form.date.value = selectedDate;
+    form.weight.value = selectedLog && selectedLog.weight !== null ? selectedLog.weight : "";
+    form.steps.value = selectedLog && selectedLog.steps !== null ? selectedLog.steps : "";
+    form.sleepHours.value =
+      selectedLog && selectedLog.sleepHours !== null ? selectedLog.sleepHours : "";
+    form.workoutDone.checked = selectedLog ? !!selectedLog.workoutDone : false;
+    form.caloriesOnTarget.checked = selectedLog ? !!selectedLog.caloriesOnTarget : false;
+    form.proteinOnTarget.checked = selectedLog ? !!selectedLog.proteinOnTarget : false;
+    form.waterTargetMet.checked = selectedLog ? !!selectedLog.waterTargetMet : false;
+  }
+
+  function renderCheckinPreview() {
+    const selectedLog = getSelectedLog();
+    const evaluation = calculations.evaluateDailyLog(selectedLog, state.goals, state.logs);
+    const status = describeScoreStatus(!!selectedLog, evaluation.hits, evaluation.total);
+
+    byId("selected-date-title").textContent = formatDateLong(selectedDate);
+    byId("selected-date-note").textContent = selectedLog
+      ? "This day already has a saved entry. Updating the form will overwrite it."
+      : "No saved entry for this date yet.";
+    byId("selected-date-score").textContent = `${evaluation.hits} / ${evaluation.total}`;
+    setToken("selected-date-status", "status-chip", status.label, status.className);
+    setToken(
+      "checkin-mode",
+      "status-pill",
+      selectedLog ? "Editing saved day" : "New day",
+      selectedLog ? "status-on-track" : "muted-chip"
+    );
+
+    renderBreakdownList(
+      "selected-date-breakdown",
+      evaluation.results.map(function (result) {
+        return {
+          title: result.label,
+          detail: result.detail,
+          badge: result.hit ? "Hit" : "Miss",
+          toneClass: result.hit ? "status-on-track" : "status-off-track",
+        };
+      }),
+      "No saved entry"
+    );
+  }
+
   function render() {
     const summary = calculations.buildSummary(state);
-    const overall = byId("overall-status");
-    overall.textContent = summary.overallStatus;
-    overall.className = statusClass(summary.overallStatus);
-
-    byId("status-detail").textContent = summary.todayLog
-      ? `${summary.todayEvaluation.hits} of ${summary.todayEvaluation.total} targets hit today.`
-      : "No entry for today yet.";
-    byId("today-score").textContent = `${summary.todayEvaluation.hits} / ${summary.todayEvaluation.total}`;
-    byId("today-date").textContent = summary.todayDate;
-    byId("weekly-adherence").textContent = formatPercentage(summary.weeklyAdherence.percentage);
-    byId("weekly-detail").textContent = `${summary.weeklyAdherence.hits} hits / ${summary.weeklyAdherence.total} checks`;
-    byId("monthly-adherence").textContent = formatPercentage(summary.monthlyAdherence.percentage);
-    byId("monthly-detail").textContent = `${summary.monthlyAdherence.hits} hits / ${summary.monthlyAdherence.total} checks`;
-    byId("workout-streak").textContent = `${summary.workoutStreak} day${summary.workoutStreak === 1 ? "" : "s"}`;
-
-    renderSummaryList(
-      "today-breakdown",
-      summary.todayEvaluation.results.map(function (result) {
-        return {
-          title: `${result.label}: ${result.hit ? "hit" : "miss"}`,
-          detail: result.detail,
-        };
-      }),
-      "No entry for today"
+    const selectedSummaryStatus = describeScoreStatus(
+      !!summary.todayLog,
+      summary.todayEvaluation.hits,
+      summary.todayEvaluation.total
     );
-
-    renderSummaryList(
-      "slipping-metrics",
-      summary.slippingMetrics.map(function (metric) {
-        return {
-          title: metric.label,
-          detail: `${metric.percentage}% over the last 14 logged days`,
-        };
-      }),
-      "Not enough history"
-    );
-
-    const stepsValues = summary.recentEntries
+    const recentEntries = summary.recentEntries;
+    const stepsValues = recentEntries
       .map(function (entry) {
         return Number(entry.steps || 0);
       })
       .filter(function (value) {
         return value > 0;
       });
-    const sleepValues = summary.recentEntries
+    const sleepValues = recentEntries
       .map(function (entry) {
         return Number(entry.sleepHours || 0);
       })
       .filter(function (value) {
         return value > 0;
       });
-    const avgSteps = stepsValues.length
-      ? Math.round(stepsValues.reduce(function (sum, value) {
-          return sum + value;
-        }, 0) / stepsValues.length)
-      : 0;
-    const avgSleep = sleepValues.length
-      ? (sleepValues.reduce(function (sum, value) {
-          return sum + value;
-        }, 0) / sleepValues.length).toFixed(1)
-      : "0.0";
+    const weightValues = recentEntries
+      .map(function (entry) {
+        return typeof entry.weight === "number" ? entry.weight : null;
+      })
+      .filter(function (value) {
+        return value !== null;
+      });
+    const averageSteps = buildAverage(stepsValues);
+    const averageSleep = buildAverage(sleepValues);
 
-    renderSummaryList(
+    byId("overall-status").textContent = summary.overallStatus;
+    byId("overall-status").className = statusClass(summary.overallStatus);
+    byId("status-detail").textContent = summary.todayLog
+      ? `${summary.todayEvaluation.hits} of ${summary.todayEvaluation.total} targets hit today.`
+      : "No entry for today yet. The fastest path is the check-in tab.";
+    setToken("status-chip", "status-chip", summary.overallStatus, statusClass(summary.overallStatus));
+
+    byId("logged-days").textContent = String(summary.loggedDays);
+    byId("logged-days-card").textContent = String(summary.loggedDays);
+    byId("latest-entry").textContent = summary.latestEntry
+      ? formatDateShort(summary.latestEntry.date)
+      : "None yet";
+    byId("weight-trend-detail").textContent = summary.weightTrend.detail;
+
+    byId("today-score").textContent = `${summary.todayEvaluation.hits} / ${summary.todayEvaluation.total}`;
+    byId("today-date").textContent = `${formatDateLong(summary.todayDate)} / ${selectedSummaryStatus.label}`;
+    byId("weekly-adherence").textContent = formatPercentage(summary.weeklyAdherence.percentage);
+    byId("weekly-detail").textContent = `${summary.weeklyWorkoutCount} / ${state.goals.weeklyWorkoutTarget} workouts`;
+    byId("monthly-adherence").textContent = formatPercentage(summary.monthlyAdherence.percentage);
+    byId("monthly-detail").textContent = `${summary.monthlyCaloriesHits} / ${state.goals.monthlyCaloriesTarget} calorie days`;
+    byId("workout-streak").textContent = `${summary.workoutStreak} day${summary.workoutStreak === 1 ? "" : "s"}`;
+    byId("workout-detail").textContent = `Target: ${state.goals.weeklyWorkoutTarget} workouts per week`;
+    byId("weight-trend-label").textContent =
+      summary.weightTrend.direction.charAt(0).toUpperCase() + summary.weightTrend.direction.slice(1);
+    byId("weight-trend-note").textContent = summary.weightTrend.detail;
+
+    renderBreakdownList(
+      "today-breakdown",
+      summary.todayEvaluation.results.map(function (result) {
+        return {
+          title: result.label,
+          detail: result.detail,
+          badge: result.hit ? "Hit" : "Miss",
+          toneClass: result.hit ? "status-on-track" : "status-off-track",
+        };
+      }),
+      "No entry for today"
+    );
+
+    renderBreakdownList(
+      "slipping-metrics",
+      summary.slippingMetrics.map(function (metric) {
+        return {
+          title: metric.label,
+          detail: `${metric.percentage}% over the last 14 logged days`,
+          badge: metric.percentage < 60 ? "Attention" : "Watch",
+          toneClass: metric.percentage < 60 ? "status-off-track" : "status-slightly-off-track",
+        };
+      }),
+      "Not enough history"
+    );
+
+    byId("focus-summary").textContent = summary.slippingMetrics.length
+      ? `${summary.slippingMetrics[0].label} is the weakest recent signal at ${summary.slippingMetrics[0].percentage}%.`
+      : "Start logging consistently to expose drift early.";
+
+    renderCompactList("weekly-goal-board", [
+      {
+        title: "Workouts this week",
+        detail: `${summary.weeklyWorkoutCount} / ${state.goals.weeklyWorkoutTarget}`,
+      },
+      {
+        title: "Calorie target days this month",
+        detail: `${summary.monthlyCaloriesHits} / ${state.goals.monthlyCaloriesTarget}`,
+      },
+      {
+        title: "Protein target days this month",
+        detail: `${summary.monthlyProteinHits} / ${state.goals.monthlyProteinTarget}`,
+      },
+      {
+        title: "Sleep minimum",
+        detail: `${state.goals.sleepMinimum} h nightly`,
+      },
+    ], "No pacing data");
+
+    renderCompactList(
+      "dashboard-recent-entries",
+      recentEntries.slice(0, 4).map(function (entry) {
+        return {
+          title: formatDateLong(entry.date),
+          detail: `${entry.steps || 0} steps / ${entry.sleepHours || 0} h sleep`,
+        };
+      }),
+      "No saved entries"
+    );
+
+    renderCompactList(
       "trend-summary",
       [
         {
@@ -126,28 +318,64 @@
         },
         {
           title: "Average steps",
-          detail: avgSteps ? `${avgSteps} steps` : "No data",
+          detail: averageSteps ? `${Math.round(averageSteps)} steps` : "No data",
         },
         {
           title: "Average sleep",
-          detail: sleepValues.length ? `${avgSleep} hours` : "No data",
+          detail: averageSleep ? `${averageSleep.toFixed(1)} hours` : "No data",
+        },
+        {
+          title: "Latest weight",
+          detail: weightValues.length ? `${weightValues[0].toFixed(1)} kg` : "No data",
         },
       ],
       "No trend data"
     );
 
-    renderSummaryList(
+    renderCompactList(
       "recent-entries",
-      summary.recentEntries.map(function (entry) {
+      recentEntries.map(function (entry) {
         return {
-          title: entry.date,
-          detail: `${entry.steps || 0} steps, ${entry.sleepHours || 0} h sleep`,
+          title: formatDateLong(entry.date),
+          detail: `${entry.steps || 0} steps / ${entry.sleepHours || 0} h sleep`,
         };
       }),
       "No saved entries"
     );
 
-    byId("checkin-date").value = summary.todayDate;
+    renderCompactList(
+      "consistency-board",
+      [
+        {
+          title: "Weekly adherence",
+          detail: formatPercentage(summary.weeklyAdherence.percentage),
+        },
+        {
+          title: "Monthly adherence",
+          detail: formatPercentage(summary.monthlyAdherence.percentage),
+        },
+        {
+          title: "Workout pace",
+          detail: `${summary.weeklyWorkoutCount} of ${state.goals.weeklyWorkoutTarget} this week`,
+        },
+        {
+          title: "Calorie adherence pace",
+          detail: `${summary.monthlyCaloriesHits} of ${state.goals.monthlyCaloriesTarget} days this month`,
+        },
+        {
+          title: "Protein adherence pace",
+          detail: `${summary.monthlyProteinHits} of ${state.goals.monthlyProteinTarget} days this month`,
+        },
+        {
+          title: "Water tracking",
+          detail: state.goals.waterDaily ? "Enabled daily" : "Disabled",
+        },
+      ],
+      "No consistency data"
+    );
+
+    populateCheckinForm();
+    renderCheckinPreview();
 
     const goalsForm = byId("goals-form");
     goalsForm.stepsMinimum.value = state.goals.stepsMinimum;
@@ -158,6 +386,12 @@
     goalsForm.waterDaily.checked = !!state.goals.waterDaily;
   }
 
+  function handleCheckinDateChange(event) {
+    selectedDate = event.currentTarget.value || calculations.getTodayISODate();
+    populateCheckinForm();
+    renderCheckinPreview();
+  }
+
   function handleCheckinSubmit(event) {
     event.preventDefault();
 
@@ -166,12 +400,14 @@
       date: form.date.value,
       weight: normalizeNumber(form.weight.value),
       workoutDone: form.workoutDone.checked,
-      steps: normalizeNumber(form.steps.value) || 0,
+      steps: normalizeNumber(form.steps.value),
       caloriesOnTarget: form.caloriesOnTarget.checked,
       proteinOnTarget: form.proteinOnTarget.checked,
-      sleepHours: normalizeNumber(form.sleepHours.value) || 0,
+      sleepHours: normalizeNumber(form.sleepHours.value),
       waterTargetMet: form.waterTargetMet.checked,
     };
+
+    selectedDate = payload.date;
 
     const nextState = {
       ...state,
@@ -219,6 +455,7 @@
 
   function handleImport(event) {
     const file = event.target.files[0];
+
     if (!file) {
       return;
     }
@@ -227,6 +464,7 @@
     reader.onload = function () {
       try {
         state = storage.importState(String(reader.result));
+        selectedDate = calculations.getTodayISODate();
         render();
         setFeedback("data-feedback", "Imported data successfully");
       } catch (error) {
@@ -236,19 +474,22 @@
     reader.readAsText(file);
   }
 
-  function bindTabs() {
-    const buttons = Array.from(document.querySelectorAll("[data-tab-target]"));
-    buttons.forEach(function (button) {
-      button.addEventListener("click", function () {
-        buttons.forEach(function (item) {
-          item.classList.remove("is-active");
-        });
-        button.classList.add("is-active");
+  function activateTab(tabId) {
+    Array.from(document.querySelectorAll(".tab-bar [data-tab-target]")).forEach(function (button) {
+      const isActive = button.dataset.tabTarget === tabId;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", String(isActive));
+    });
 
-        Array.from(document.querySelectorAll(".tab-panel")).forEach(function (panel) {
-          panel.classList.remove("is-active");
-        });
-        byId(`tab-${button.dataset.tabTarget}`).classList.add("is-active");
+    Array.from(document.querySelectorAll(".tab-panel")).forEach(function (panel) {
+      panel.classList.toggle("is-active", panel.id === `tab-${tabId}`);
+    });
+  }
+
+  function bindTabs() {
+    Array.from(document.querySelectorAll("[data-tab-target]")).forEach(function (button) {
+      button.addEventListener("click", function () {
+        activateTab(button.dataset.tabTarget);
       });
     });
   }
@@ -256,6 +497,7 @@
   function bindForms() {
     byId("checkin-form").addEventListener("submit", handleCheckinSubmit);
     byId("goals-form").addEventListener("submit", handleGoalsSubmit);
+    byId("checkin-date").addEventListener("change", handleCheckinDateChange);
     byId("export-data").addEventListener("click", handleExport);
     byId("import-data").addEventListener("change", handleImport);
   }

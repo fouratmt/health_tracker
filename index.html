@@ -11,123 +11,254 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
     <div class="app-shell">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">Personal Health Tracker</p>
-          <h1>Daily accountability without friction.</h1>
+      <header class="hero card hero-card">
+        <div class="hero-copy-block">
+          <p class="eyebrow">Static. Local. Daily.</p>
+          <h1>Stay honest with the plan.</h1>
           <p class="hero-copy">
-            Set simple targets, log once per day, and see instantly whether
-            your system is holding.
+            This is a private accountability surface, not a coaching app. Set a
+            few targets, log the day once, and see quickly whether your system
+            is holding or starting to drift.
           </p>
+          <div class="hero-actions">
+            <button class="primary-button" data-tab-target="checkin">
+              Log today
+            </button>
+            <button class="ghost-button" data-tab-target="progress">
+              Review progress
+            </button>
+          </div>
+          <ul class="hero-tags" aria-label="Product qualities">
+            <li>Local-only data</li>
+            <li>Fast daily review</li>
+            <li>No login</li>
+            <li>GitHub Pages ready</li>
+          </ul>
         </div>
-        <div class="hero-status card">
-          <p class="label">Overall status</p>
+
+        <aside class="hero-status">
+          <div class="status-head">
+            <p class="label">Current standing</p>
+            <span id="status-chip" class="status-chip status-on-track">
+              On track
+            </span>
+          </div>
           <strong id="overall-status">On track</strong>
           <p id="status-detail" class="muted">
             No entries yet. Start with today&apos;s check-in.
           </p>
-        </div>
+          <dl class="status-facts">
+            <div>
+              <dt>Logged days</dt>
+              <dd id="logged-days">0</dd>
+            </div>
+            <div>
+              <dt>Latest entry</dt>
+              <dd id="latest-entry">None yet</dd>
+            </div>
+            <div>
+              <dt>Weight trend</dt>
+              <dd id="weight-trend-detail">Need more data</dd>
+            </div>
+          </dl>
+        </aside>
       </header>
 
       <nav class="tab-bar" aria-label="Primary">
-        <button class="tab-button is-active" data-tab-target="dashboard">
+        <button
+          class="tab-button is-active"
+          data-tab-target="dashboard"
+          aria-selected="true"
+        >
           Dashboard
         </button>
-        <button class="tab-button" data-tab-target="checkin">Check-In</button>
-        <button class="tab-button" data-tab-target="progress">Progress</button>
-        <button class="tab-button" data-tab-target="goals">Goals</button>
+        <button class="tab-button" data-tab-target="checkin" aria-selected="false">
+          Check-In
+        </button>
+        <button class="tab-button" data-tab-target="progress" aria-selected="false">
+          Progress
+        </button>
+        <button class="tab-button" data-tab-target="goals" aria-selected="false">
+          Goals
+        </button>
       </nav>
 
-      <main>
+      <main class="main-stack">
         <section id="tab-dashboard" class="tab-panel is-active">
-          <div class="card-grid">
-            <article class="card metric-card">
-              <p class="label">Today</p>
+          <div class="card-grid stat-grid">
+            <article class="card metric-card accent-card">
+              <p class="label">Today&apos;s score</p>
               <strong id="today-score">0 / 0</strong>
-              <span id="today-date" class="muted"></span>
+              <span id="today-date" class="muted">No day selected</span>
             </article>
+
             <article class="card metric-card">
-              <p class="label">Weekly adherence</p>
+              <p class="label">This week</p>
               <strong id="weekly-adherence">0%</strong>
               <span id="weekly-detail" class="muted"></span>
             </article>
+
             <article class="card metric-card">
-              <p class="label">Monthly adherence</p>
+              <p class="label">This month</p>
               <strong id="monthly-adherence">0%</strong>
               <span id="monthly-detail" class="muted"></span>
             </article>
+
             <article class="card metric-card">
               <p class="label">Workout streak</p>
               <strong id="workout-streak">0 days</strong>
-              <span class="muted">Consecutive completed workout days</span>
+              <span id="workout-detail" class="muted">
+                Consecutive completed workout days
+              </span>
+            </article>
+
+            <article class="card metric-card">
+              <p class="label">Logged days</p>
+              <strong id="logged-days-card">0</strong>
+              <span class="muted">Saved daily check-ins</span>
+            </article>
+
+            <article class="card metric-card">
+              <p class="label">Weight trend</p>
+              <strong id="weight-trend-label">Flat</strong>
+              <span id="weight-trend-note" class="muted">Need more data</span>
             </article>
           </div>
 
-          <div class="two-column">
+          <div class="dashboard-grid">
+            <article class="card surface-card">
+              <div class="section-heading">
+                <h2>Today at a glance</h2>
+                <p class="muted">
+                  A quick read of the current day&apos;s hits and misses.
+                </p>
+              </div>
+              <ul id="today-breakdown" class="summary-list breakdown-list"></ul>
+            </article>
+
+            <article class="card surface-card">
+              <div class="section-heading">
+                <h2>Attention area</h2>
+                <p class="muted">
+                  The weakest signals across recent check-ins.
+                </p>
+              </div>
+              <ul id="slipping-metrics" class="summary-list focus-list"></ul>
+              <p id="focus-summary" class="inline-note muted">
+                No trend signal yet.
+              </p>
+            </article>
+          </div>
+
+          <div class="two-column lower-dashboard-grid">
             <article class="card">
               <div class="section-heading">
-                <h2>Daily target summary</h2>
-                <p class="muted">Today&apos;s metric-by-metric result.</p>
+                <h2>Goal pacing</h2>
+                <p class="muted">
+                  Progress against the most important weekly and monthly rules.
+                </p>
               </div>
-              <ul id="today-breakdown" class="summary-list"></ul>
+              <ul id="weekly-goal-board" class="summary-list compact-list"></ul>
             </article>
 
             <article class="card">
               <div class="section-heading">
-                <h2>Slipping metrics</h2>
-                <p class="muted">Metrics with the weakest recent adherence.</p>
+                <h2>Latest entries</h2>
+                <p class="muted">Recent check-ins for quick review.</p>
               </div>
-              <ul id="slipping-metrics" class="summary-list"></ul>
+              <ul
+                id="dashboard-recent-entries"
+                class="summary-list compact-list"
+              ></ul>
             </article>
           </div>
         </section>
 
         <section id="tab-checkin" class="tab-panel">
-          <article class="card form-card">
-            <div class="section-heading">
-              <h2>Daily check-in</h2>
-              <p class="muted">One quick review. Update any day if needed.</p>
-            </div>
-            <form id="checkin-form" class="form-grid">
-              <label>
-                <span>Date</span>
-                <input type="date" name="date" id="checkin-date" required />
-              </label>
-              <label>
-                <span>Weight (kg)</span>
-                <input type="number" name="weight" step="0.1" min="0" />
-              </label>
-              <label>
-                <span>Steps</span>
-                <input type="number" name="steps" step="1" min="0" />
-              </label>
-              <label>
-                <span>Sleep hours</span>
-                <input type="number" name="sleepHours" step="0.1" min="0" />
-              </label>
-              <label class="toggle-field">
-                <span>Workout done</span>
-                <input type="checkbox" name="workoutDone" />
-              </label>
-              <label class="toggle-field">
-                <span>Calories on target</span>
-                <input type="checkbox" name="caloriesOnTarget" />
-              </label>
-              <label class="toggle-field">
-                <span>Protein on target</span>
-                <input type="checkbox" name="proteinOnTarget" />
-              </label>
-              <label class="toggle-field">
-                <span>Water target met</span>
-                <input type="checkbox" name="waterTargetMet" />
-              </label>
-              <div class="form-actions">
-                <button type="submit" class="primary-button">Save entry</button>
-                <p id="checkin-feedback" class="muted"></p>
+          <div class="workspace-grid">
+            <article class="card form-card">
+              <div class="section-heading section-heading-split">
+                <div>
+                  <h2>Daily check-in</h2>
+                  <p class="muted">
+                    One compact review. Switch the date to update an older day.
+                  </p>
+                </div>
+                <span id="checkin-mode" class="status-pill">New day</span>
               </div>
-            </form>
-          </article>
+
+              <form id="checkin-form" class="form-grid">
+                <div class="field-grid">
+                  <label>
+                    <span>Date</span>
+                    <input type="date" name="date" id="checkin-date" required />
+                  </label>
+                  <label>
+                    <span>Weight (kg)</span>
+                    <input type="number" name="weight" step="0.1" min="0" />
+                  </label>
+                  <label>
+                    <span>Steps</span>
+                    <input type="number" name="steps" step="1" min="0" />
+                  </label>
+                  <label>
+                    <span>Sleep hours</span>
+                    <input type="number" name="sleepHours" step="0.1" min="0" />
+                  </label>
+                </div>
+
+                <div class="toggle-grid">
+                  <label class="toggle-field">
+                    <span>Workout done</span>
+                    <input type="checkbox" name="workoutDone" />
+                  </label>
+                  <label class="toggle-field">
+                    <span>Calories on target</span>
+                    <input type="checkbox" name="caloriesOnTarget" />
+                  </label>
+                  <label class="toggle-field">
+                    <span>Protein on target</span>
+                    <input type="checkbox" name="proteinOnTarget" />
+                  </label>
+                  <label class="toggle-field">
+                    <span>Water target met</span>
+                    <input type="checkbox" name="waterTargetMet" />
+                  </label>
+                </div>
+
+                <div class="form-actions form-actions-inline">
+                  <button type="submit" class="primary-button">Save entry</button>
+                  <p id="checkin-feedback" class="muted"></p>
+                </div>
+              </form>
+            </article>
+
+            <aside class="card preview-card">
+              <div class="section-heading">
+                <h2 id="selected-date-title">Selected day</h2>
+                <p id="selected-date-note" class="muted">
+                  Ready for a quick review.
+                </p>
+              </div>
+
+              <div class="preview-score">
+                <p class="label">Selected date score</p>
+                <strong id="selected-date-score">0 / 0</strong>
+                <span id="selected-date-status" class="status-chip muted-chip">
+                  Awaiting entry
+                </span>
+              </div>
+
+              <ul
+                id="selected-date-breakdown"
+                class="summary-list breakdown-list"
+              ></ul>
+            </aside>
+          </div>
         </section>
 
         <section id="tab-progress" class="tab-panel">
@@ -135,9 +266,11 @@
             <article class="card">
               <div class="section-heading">
                 <h2>Trend snapshot</h2>
-                <p class="muted">Recent numeric averages and direction.</p>
+                <p class="muted">
+                  A compact view of recent averages and directional changes.
+                </p>
               </div>
-              <ul id="trend-summary" class="summary-list"></ul>
+              <ul id="trend-summary" class="summary-list compact-list"></ul>
             </article>
 
             <article class="card">
@@ -145,9 +278,20 @@
                 <h2>Recent entries</h2>
                 <p class="muted">Latest saved logs.</p>
               </div>
-              <ul id="recent-entries" class="summary-list"></ul>
+              <ul id="recent-entries" class="summary-list compact-list"></ul>
             </article>
           </div>
+
+          <article class="card wide-card">
+            <div class="section-heading">
+              <h2>Consistency board</h2>
+              <p class="muted">
+                The core pacing metrics that define whether the system is
+                holding.
+              </p>
+            </div>
+            <ul id="consistency-board" class="summary-list compact-list"></ul>
+          </article>
         </section>
 
         <section id="tab-goals" class="tab-panel">
@@ -211,9 +355,15 @@
             <article class="card">
               <div class="section-heading">
                 <h2>Data</h2>
-                <p class="muted">All data stays local to this browser.</p>
+                <p class="muted">
+                  All data stays local to this browser unless you export it.
+                </p>
               </div>
               <div class="stack-actions">
+                <p class="callout">
+                  Use export regularly if you want a durable backup across
+                  browsers or devices.
+                </p>
                 <button id="export-data" class="secondary-button">
                   Export JSON
                 </button>
