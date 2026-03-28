@@ -10,11 +10,11 @@ help:
 open:
   @open index.html
 
-run host="127.0.0.1" port="4173":
+run host="127.0.0.1" port="9292":
   @echo "Serving http://{{host}}:{{port}} with python3"
   @python3 -m http.server {{port}} --bind {{host}}
 
-run-uvx host="127.0.0.1" port="4173":
+run-uvx host="127.0.0.1" port="9292":
   @echo "Serving http://{{host}}:{{port}} with uvx"
   @uvx python -m http.server {{port}} --bind {{host}}
 
@@ -25,8 +25,8 @@ check:
   done
 
 dev: check
-  @echo "Serving http://127.0.0.1:4173 with python3"
-  @python3 -m http.server 4173 --bind 127.0.0.1
+  @echo "Serving http://127.0.0.1:9292 with python3"
+  @python3 -m http.server 9292 --bind 127.0.0.1
 
 doctor:
   @just --version

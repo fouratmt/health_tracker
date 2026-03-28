@@ -8,6 +8,27 @@
       name="description"
       content="Static personal health accountability tracker with local-only storage."
     />
+    <script>
+      (function () {
+        try {
+          const raw = window.localStorage.getItem("personal-health-tracker");
+
+          if (!raw) {
+            return;
+          }
+
+          const parsed = JSON.parse(raw);
+          const theme =
+            parsed &&
+            parsed.preferences &&
+            parsed.preferences.theme === "dark"
+              ? "dark"
+              : "light";
+
+          document.documentElement.dataset.theme = theme;
+        } catch (error) {}
+      })();
+    </script>
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
@@ -30,6 +51,14 @@
             </button>
             <button class="ghost-button" data-tab-target="progress">
               Review progress
+            </button>
+            <button
+              id="theme-toggle"
+              class="secondary-button theme-toggle"
+              type="button"
+              aria-pressed="false"
+            >
+              Dark mode
             </button>
           </div>
           <ul class="hero-tags" aria-label="Product qualities">
@@ -209,6 +238,20 @@
                     <span>Sleep hours</span>
                     <input type="number" name="sleepHours" step="0.1" min="0" />
                   </label>
+                  <label>
+                    <span>Sleep score</span>
+                    <input
+                      type="number"
+                      name="sleepScore"
+                      step="1"
+                      min="0"
+                      max="100"
+                    />
+                  </label>
+                  <label>
+                    <span>Went to bed</span>
+                    <input type="time" name="bedtime" />
+                  </label>
                 </div>
 
                 <div class="toggle-grid">
@@ -219,10 +262,6 @@
                   <label class="toggle-field">
                     <span>Calories on target</span>
                     <input type="checkbox" name="caloriesOnTarget" />
-                  </label>
-                  <label class="toggle-field">
-                    <span>Protein on target</span>
-                    <input type="checkbox" name="proteinOnTarget" />
                   </label>
                   <label class="toggle-field">
                     <span>Water target met</span>
@@ -311,6 +350,16 @@
                   <input type="number" name="sleepMinimum" step="0.1" min="0" />
                 </label>
                 <label>
+                  <span>Sleep score minimum</span>
+                  <input
+                    type="number"
+                    name="sleepScoreMinimum"
+                    step="1"
+                    min="0"
+                    max="100"
+                  />
+                </label>
+                <label>
                   <span>Weekly workout target</span>
                   <input
                     type="number"
@@ -324,16 +373,6 @@
                   <input
                     type="number"
                     name="monthlyCaloriesTarget"
-                    step="1"
-                    min="0"
-                    max="31"
-                  />
-                </label>
-                <label>
-                  <span>Monthly protein target days</span>
-                  <input
-                    type="number"
-                    name="monthlyProteinTarget"
                     step="1"
                     min="0"
                     max="31"

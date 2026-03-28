@@ -54,9 +54,6 @@
     const caloriesHitsThisMonth = monthlyLogs.filter(function (entry) {
       return !!entry.caloriesOnTarget;
     }).length;
-    const proteinHitsThisMonth = monthlyLogs.filter(function (entry) {
-      return !!entry.proteinOnTarget;
-    }).length;
 
     const rules = [
       {
@@ -78,18 +75,21 @@
         detail: `${caloriesHitsThisMonth} monthly hit days`,
       },
       {
-        key: "proteinOnTarget",
-        label: "Protein",
-        hit: !!log.proteinOnTarget,
-        detail: `${proteinHitsThisMonth} monthly hit days`,
-      },
-      {
         key: "sleepHours",
         label: "Sleep",
         hit: Number(log.sleepHours || 0) >= Number(goals.sleepMinimum || 0),
         detail: `${Number(log.sleepHours || 0)} / ${Number(goals.sleepMinimum || 0)} h`,
       },
     ];
+
+    if (typeof log.sleepScore === "number" && !Number.isNaN(log.sleepScore)) {
+      rules.push({
+        key: "sleepScore",
+        label: "Sleep score",
+        hit: Number(log.sleepScore || 0) >= Number(goals.sleepScoreMinimum || 0),
+        detail: `${Number(log.sleepScore || 0)} / ${Number(goals.sleepScoreMinimum || 0)}`,
+      });
+    }
 
     if (goals.waterDaily) {
       rules.push({
@@ -200,21 +200,15 @@
       return [];
     }
 
-    const counters = {
-      Workout: { hits: 0, total: 0 },
-      Steps: { hits: 0, total: 0 },
-      Calories: { hits: 0, total: 0 },
-      Protein: { hits: 0, total: 0 },
-      Sleep: { hits: 0, total: 0 },
-    };
-
-    if (goals.waterDaily) {
-      counters.Water = { hits: 0, total: 0 };
-    }
+    const counters = {};
 
     entries.forEach(function (entry) {
       const evaluation = evaluateDailyLog(entry, goals, logs);
       evaluation.results.forEach(function (result) {
+        if (!counters[result.label]) {
+          counters[result.label] = { hits: 0, total: 0 };
+        }
+
         counters[result.label].hits += result.hit ? 1 : 0;
         counters[result.label].total += 1;
       });
@@ -299,7 +293,6 @@
       loggedDays: allEntries.length,
       weeklyWorkoutCount: countHits(currentWeekEntries, "workoutDone"),
       monthlyCaloriesHits: countHits(currentMonthEntries, "caloriesOnTarget"),
-      monthlyProteinHits: countHits(currentMonthEntries, "proteinOnTarget"),
     };
   }
 

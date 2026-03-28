@@ -26,6 +26,27 @@
     return Number.isNaN(parsed) ? null : parsed;
   }
 
+  function normalizeTime(value) {
+    return /^\d{2}:\d{2}$/.test(value || "") ? value : null;
+  }
+
+  function applyTheme(theme) {
+    const resolvedTheme = theme === "dark" ? "dark" : "light";
+    const toggleButton = byId("theme-toggle");
+
+    document.documentElement.dataset.theme = resolvedTheme;
+
+    if (!toggleButton) {
+      return;
+    }
+
+    const nextLabel = resolvedTheme === "dark" ? "Light mode" : "Dark mode";
+    toggleButton.textContent = nextLabel;
+    toggleButton.setAttribute("aria-pressed", String(resolvedTheme === "dark"));
+    toggleButton.setAttribute("aria-label", `Switch to ${nextLabel.toLowerCase()}`);
+    toggleButton.title = `Switch to ${nextLabel.toLowerCase()}`;
+  }
+
   function setFeedback(id, text) {
     byId(id).textContent = text;
     window.setTimeout(function () {
@@ -144,6 +165,30 @@
     return state.logs[selectedDate] || null;
   }
 
+  function formatBedtime(value) {
+    return value || "Not logged";
+  }
+
+  function formatSleepSnapshot(entry) {
+    const parts = [];
+
+    if (typeof entry.sleepHours === "number") {
+      parts.push(`${entry.sleepHours} h sleep`);
+    } else {
+      parts.push("No sleep duration");
+    }
+
+    if (typeof entry.sleepScore === "number") {
+      parts.push(`score ${entry.sleepScore}`);
+    }
+
+    if (entry.bedtime) {
+      parts.push(`bed ${formatBedtime(entry.bedtime)}`);
+    }
+
+    return parts.join(" / ");
+  }
+
   function populateCheckinForm() {
     const form = byId("checkin-form");
     const selectedLog = getSelectedLog();
@@ -153,9 +198,11 @@
     form.steps.value = selectedLog && selectedLog.steps !== null ? selectedLog.steps : "";
     form.sleepHours.value =
       selectedLog && selectedLog.sleepHours !== null ? selectedLog.sleepHours : "";
+    form.sleepScore.value =
+      selectedLog && selectedLog.sleepScore !== null ? selectedLog.sleepScore : "";
+    form.bedtime.value = selectedLog && selectedLog.bedtime ? selectedLog.bedtime : "";
     form.workoutDone.checked = selectedLog ? !!selectedLog.workoutDone : false;
     form.caloriesOnTarget.checked = selectedLog ? !!selectedLog.caloriesOnTarget : false;
-    form.proteinOnTarget.checked = selectedLog ? !!selectedLog.proteinOnTarget : false;
     form.waterTargetMet.checked = selectedLog ? !!selectedLog.waterTargetMet : false;
   }
 
@@ -166,7 +213,7 @@
 
     byId("selected-date-title").textContent = formatDateLong(selectedDate);
     byId("selected-date-note").textContent = selectedLog
-      ? "This day already has a saved entry. Updating the form will overwrite it."
+      ? `Saved entry with ${formatSleepSnapshot(selectedLog)}. Updating the form will overwrite it.`
       : "No saved entry for this date yet.";
     byId("selected-date-score").textContent = `${evaluation.hits} / ${evaluation.total}`;
     setToken("selected-date-status", "status-chip", status.label, status.className);
@@ -192,6 +239,8 @@
   }
 
   function render() {
+    applyTheme(state.preferences.theme);
+
     const summary = calculations.buildSummary(state);
     const selectedSummaryStatus = describeScoreStatus(
       !!summary.todayLog,
@@ -213,6 +262,13 @@
       .filter(function (value) {
         return value > 0;
       });
+    const sleepScoreValues = recentEntries
+      .map(function (entry) {
+        return typeof entry.sleepScore === "number" ? entry.sleepScore : null;
+      })
+      .filter(function (value) {
+        return value !== null;
+      });
     const weightValues = recentEntries
       .map(function (entry) {
         return typeof entry.weight === "number" ? entry.weight : null;
@@ -222,6 +278,10 @@
       });
     const averageSteps = buildAverage(stepsValues);
     const averageSleep = buildAverage(sleepValues);
+    const averageSleepScore = buildAverage(sleepScoreValues);
+    const latestBedtimeEntry = recentEntries.find(function (entry) {
+      return !!entry.bedtime;
+    });
 
     byId("overall-status").textContent = summary.overallStatus;
     byId("overall-status").className = statusClass(summary.overallStatus);
@@ -289,12 +349,8 @@
         detail: `${summary.monthlyCaloriesHits} / ${state.goals.monthlyCaloriesTarget}`,
       },
       {
-        title: "Protein target days this month",
-        detail: `${summary.monthlyProteinHits} / ${state.goals.monthlyProteinTarget}`,
-      },
-      {
         title: "Sleep minimum",
-        detail: `${state.goals.sleepMinimum} h nightly`,
+        detail: `${state.goals.sleepMinimum} h / ${state.goals.sleepScoreMinimum}+ score`,
       },
     ], "No pacing data");
 
@@ -303,7 +359,7 @@
       recentEntries.slice(0, 4).map(function (entry) {
         return {
           title: formatDateLong(entry.date),
-          detail: `${entry.steps || 0} steps / ${entry.sleepHours || 0} h sleep`,
+          detail: `${entry.steps || 0} steps / ${formatSleepSnapshot(entry)}`,
         };
       }),
       "No saved entries"
@@ -318,15 +374,23 @@
         },
         {
           title: "Average steps",
-          detail: averageSteps ? `${Math.round(averageSteps)} steps` : "No data",
+          detail: averageSteps !== null ? `${Math.round(averageSteps)} steps` : "No data",
         },
         {
           title: "Average sleep",
-          detail: averageSleep ? `${averageSleep.toFixed(1)} hours` : "No data",
+          detail: averageSleep !== null ? `${averageSleep.toFixed(1)} hours` : "No data",
+        },
+        {
+          title: "Average sleep score",
+          detail: averageSleepScore !== null ? `${averageSleepScore.toFixed(0)} / 100` : "No data",
         },
         {
           title: "Latest weight",
           detail: weightValues.length ? `${weightValues[0].toFixed(1)} kg` : "No data",
+        },
+        {
+          title: "Latest bedtime",
+          detail: latestBedtimeEntry ? formatBedtime(latestBedtimeEntry.bedtime) : "No data",
         },
       ],
       "No trend data"
@@ -337,7 +401,7 @@
       recentEntries.map(function (entry) {
         return {
           title: formatDateLong(entry.date),
-          detail: `${entry.steps || 0} steps / ${entry.sleepHours || 0} h sleep`,
+          detail: `${entry.steps || 0} steps / ${formatSleepSnapshot(entry)}`,
         };
       }),
       "No saved entries"
@@ -363,8 +427,8 @@
           detail: `${summary.monthlyCaloriesHits} of ${state.goals.monthlyCaloriesTarget} days this month`,
         },
         {
-          title: "Protein adherence pace",
-          detail: `${summary.monthlyProteinHits} of ${state.goals.monthlyProteinTarget} days this month`,
+          title: "Sleep score target",
+          detail: `${state.goals.sleepScoreMinimum}+ when logged`,
         },
         {
           title: "Water tracking",
@@ -380,10 +444,22 @@
     const goalsForm = byId("goals-form");
     goalsForm.stepsMinimum.value = state.goals.stepsMinimum;
     goalsForm.sleepMinimum.value = state.goals.sleepMinimum;
+    goalsForm.sleepScoreMinimum.value = state.goals.sleepScoreMinimum;
     goalsForm.weeklyWorkoutTarget.value = state.goals.weeklyWorkoutTarget;
     goalsForm.monthlyCaloriesTarget.value = state.goals.monthlyCaloriesTarget;
-    goalsForm.monthlyProteinTarget.value = state.goals.monthlyProteinTarget;
     goalsForm.waterDaily.checked = !!state.goals.waterDaily;
+  }
+
+  function handleThemeToggle() {
+    const nextTheme = state.preferences.theme === "dark" ? "light" : "dark";
+
+    saveAndRender({
+      ...state,
+      preferences: {
+        ...state.preferences,
+        theme: nextTheme,
+      },
+    });
   }
 
   function handleCheckinDateChange(event) {
@@ -402,8 +478,9 @@
       workoutDone: form.workoutDone.checked,
       steps: normalizeNumber(form.steps.value),
       caloriesOnTarget: form.caloriesOnTarget.checked,
-      proteinOnTarget: form.proteinOnTarget.checked,
       sleepHours: normalizeNumber(form.sleepHours.value),
+      sleepScore: normalizeNumber(form.sleepScore.value),
+      bedtime: normalizeTime(form.bedtime.value),
       waterTargetMet: form.waterTargetMet.checked,
     };
 
@@ -431,9 +508,9 @@
         ...state.goals,
         stepsMinimum: normalizeNumber(form.stepsMinimum.value) || 0,
         sleepMinimum: normalizeNumber(form.sleepMinimum.value) || 0,
+        sleepScoreMinimum: normalizeNumber(form.sleepScoreMinimum.value) || 0,
         weeklyWorkoutTarget: normalizeNumber(form.weeklyWorkoutTarget.value) || 0,
         monthlyCaloriesTarget: normalizeNumber(form.monthlyCaloriesTarget.value) || 0,
-        monthlyProteinTarget: normalizeNumber(form.monthlyProteinTarget.value) || 0,
         waterDaily: form.waterDaily.checked,
       },
     };
@@ -500,6 +577,7 @@
     byId("checkin-date").addEventListener("change", handleCheckinDateChange);
     byId("export-data").addEventListener("click", handleExport);
     byId("import-data").addEventListener("change", handleImport);
+    byId("theme-toggle").addEventListener("click", handleThemeToggle);
   }
 
   function start() {

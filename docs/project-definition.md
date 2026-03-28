@@ -29,7 +29,19 @@ It should feel:
 - fast
 - low-friction
 - clear
+- visually sober
 - mildly gamified through consistency, not entertainment
+
+### Visual Direction
+
+The product should use a light-first palette with a white background, blue accents, and black anchors, while still providing a dark-mode toggle.
+
+Reasoning:
+
+- the interface should feel focused rather than playful
+- the default mode should stay bright and easy to scan during the day
+- contrast should make hits, misses, and summaries easy to scan
+- the visual system should reinforce private self-audit, not lifestyle branding
 
 ## Product Principles
 
@@ -42,9 +54,10 @@ In scope:
 - weight
 - steps
 - sleep duration
+- sleep score
+- bedtime
 - workout completed
 - calories on target
-- protein on target
 - water target met
 
 Out of scope:
@@ -57,7 +70,7 @@ Out of scope:
 
 ### 2. One Check-In Per Day
 
-The primary interaction is a single daily review, ideally in the evening.
+The primary interaction is a single daily review, ideally in the evening or the following morning once sleep data is available.
 
 The app should avoid multiple check-ins, frequent prompts, or scattered logging flows.
 
@@ -136,11 +149,12 @@ The first version should support these metrics:
 - `workout_done`: boolean
 - `steps`: integer
 - `calories_on_target`: boolean
-- `protein_on_target`: boolean
 - `sleep_hours`: numeric
+- `sleep_score`: numeric, 0 to 100 when available
+- `bedtime`: `HH:MM` local time for when the user went to bed
 - `water_target_met`: boolean
 
-If the MVP needs to be reduced further, the first six metrics are enough.
+If the MVP needs to be reduced further, bedtime can stay informational before it becomes goal-driven.
 
 ## Functional Model
 
@@ -161,6 +175,16 @@ Supported goal types:
 - `range`
 - `frequency`
 - `trend`
+
+Current examples:
+
+- `stepsMinimum`
+- `sleepMinimum`
+- `sleepScoreMinimum`
+- `weeklyWorkoutTarget`
+- `monthlyCaloriesTarget`
+
+Bedtime is currently recorded for context and review, not as a scored rule.
 
 ### 3. Evaluation
 
@@ -188,23 +212,25 @@ The main product signal should therefore come from consistency in:
 - workouts
 - nutrition targets
 - steps
-- sleep
+- sleep duration
+- sleep quality
 - hydration
 
 ## Daily Logging Flow
 
 ### Main User Flow
 
-The primary flow should be a single evening check-in:
+The primary flow should be a single daily check-in:
 
 1. Enter weight
 2. Mark workout done or not
 3. Enter steps
 4. Mark calories target hit or not
-5. Mark protein target hit or not
-6. Enter sleep hours
-7. Mark water target met or not
-8. View instant daily summary
+5. Enter sleep hours
+6. Enter sleep score if available
+7. Enter bedtime
+8. Mark water target met or not
+9. View the instant daily summary
 
 ## Screen Structure
 
@@ -231,4 +257,4 @@ The following should remain out of scope for the first version:
 
 ## Final Product Summary
 
-This project is a minimalist health accountability tracker built around measurable goals, one daily check-in, adherence scoring, streaks, and clear weekly/monthly progress visibility.
+This project is a minimalist health accountability tracker built around measurable goals, one daily check-in, adherence scoring, streaks, clear weekly and monthly progress visibility, and richer sleep tracking through duration, score, and bedtime.

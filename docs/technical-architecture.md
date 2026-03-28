@@ -47,6 +47,8 @@ Responsibilities:
 - expose dashboard, check-in, progress, and goals views
 - provide mobile-friendly forms and cards
 - display status and summaries
+- apply the light-first white, blue, and black visual system
+- support a persistent dark-mode override
 
 Constraints:
 
@@ -66,7 +68,8 @@ Responsibilities:
 - bind form events
 - call calculation functions
 - render computed outputs into the DOM
-- handle import/export actions
+- handle import and export actions
+- populate and edit per-day logs including sleep hours, sleep score, and bedtime
 
 This layer should contain wiring and UI flow logic, not business rules.
 
@@ -85,6 +88,7 @@ Responsibilities:
 - compute streaks
 - compute weight trend summary
 - derive `On track`, `Slightly off track`, and `Off track` statuses
+- include sleep-score evaluation only when a score exists for a log
 
 This layer is the source of truth for business logic and must remain deterministic and side-effect free.
 
@@ -99,7 +103,8 @@ Responsibilities:
 - read and write application data from browser local storage
 - initialize defaults for first use
 - store versioned JSON
-- import external JSON safely
+- normalize imported and legacy data
+- persist theme preferences together with the rest of the app state
 - export current data snapshot
 
 ## Runtime Model
@@ -126,7 +131,7 @@ Responsibilities:
 
 1. user selects a JSON file
 2. `app.js` reads the file contents
-3. parsed data is validated lightly
+3. parsed data is normalized into the current schema
 4. `storage.js` replaces the stored document
 5. app re-renders from the imported state
 
@@ -138,13 +143,16 @@ Example shape:
 
 ```json
 {
-  "version": 1,
+  "version": 3,
+  "preferences": {
+    "theme": "light"
+  },
   "goals": {
     "stepsMinimum": 8000,
     "sleepMinimum": 7,
+    "sleepScoreMinimum": 80,
     "weeklyWorkoutTarget": 4,
     "monthlyCaloriesTarget": 24,
-    "monthlyProteinTarget": 25,
     "waterDaily": true,
     "weightTrendDirection": "down"
   },
@@ -155,8 +163,9 @@ Example shape:
       "workoutDone": true,
       "steps": 7450,
       "caloriesOnTarget": true,
-      "proteinOnTarget": false,
       "sleepHours": 6.5,
+      "sleepScore": 78,
+      "bedtime": "23:20",
       "waterTargetMet": true
     }
   }
@@ -179,7 +188,7 @@ Reasoning:
 
 ### Known Limitation
 
-`localStorage` under `file://` can behave differently by browser. The app should remain simple enough that the user can switch to a static host such as GitHub Pages if needed, and export/import support reduces lock-in risk.
+`localStorage` under `file://` can behave differently by browser. The app should remain simple enough that the user can switch to a static host such as GitHub Pages if needed, and export and import support reduces lock-in risk.
 
 ## Calculation Strategy
 
@@ -196,13 +205,14 @@ Core calculation outputs:
 - daily completion ratio
 - weekly adherence ratio
 - monthly adherence ratio
-- per-metric streaks
+- workout streak
 - slipping metrics
+- weight trend
 - overall status
 
 ## UI Structure
 
-The app should use a single-page static layout with section-based navigation:
+The app uses a single-page static layout with section-based navigation:
 
 - Dashboard
 - Daily Check-In
@@ -223,6 +233,7 @@ This avoids routing complexity and keeps compatibility with `file://`.
 
 - centralize formulas in one calculation module
 - normalize input values before persistence
+- normalize imported and legacy logs and preferences to the current schema version
 - version stored data for future migration
 - avoid floating hidden state in the UI
 - re-render from state after every write
@@ -248,6 +259,7 @@ These can be added later without changing the core architecture:
 - installable PWA packaging
 - optional CSV export
 - configurable metric definitions
+- bedtime-target rules if the user wants them scored
 
 ## Architectural Tradeoffs
 
@@ -258,10 +270,3 @@ These can be added later without changing the core architecture:
 - easy hosting
 - privacy by default
 - fast startup
-
-### Costs
-
-- no sync across devices
-- browser-local persistence only
-- limited storage durability if browser data is cleared
-- richer analytics may need more client-side code later

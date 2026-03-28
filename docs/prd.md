@@ -10,7 +10,7 @@ Deliver a lightweight static web app that helps a user define health targets, co
 
 ## Product Summary
 
-The app is a personal accountability tool for measurable health habits. It focuses on adherence rather than coaching. The user sets simple rules, logs once per day, and sees daily, weekly, and monthly performance.
+The app is a personal accountability tool for measurable health habits. It focuses on adherence rather than coaching. The user sets simple rules, logs once per day, and sees daily, weekly, and monthly performance in a light-first white interface with blue and black accents plus an optional dark mode.
 
 ## Primary User
 
@@ -100,8 +100,8 @@ The app must allow the user to define and update active targets for:
 - weekly workout count
 - daily step minimum
 - calorie adherence
-- protein adherence
 - sleep minimum
+- sleep score minimum
 - hydration completion
 
 ### FR2. Daily Check-In
@@ -113,8 +113,9 @@ The app must provide a daily entry form with the following fields:
 - workout done
 - steps
 - calories on target
-- protein on target
 - sleep hours
+- sleep score
+- bedtime
 - water target met
 
 The app must allow creating or updating a log for a specific date.
@@ -125,9 +126,11 @@ After saving a log, the app must compute:
 
 - targets hit today
 - total applicable targets today
-- per-metric hit/miss status
+- per-metric hit or miss status
 - current streaks
 - overall daily status
+
+The daily evaluation must treat sleep duration as a scored rule, and it must add a separate sleep-score rule when a sleep score is present for that day.
 
 ### FR4. Weekly and Monthly Evaluation
 
@@ -153,9 +156,11 @@ The dashboard must display:
 
 The progress view must display:
 
-- recent weight history
-- recent adherence history
-- average sleep
+- recent weight history summary
+- recent adherence summaries
+- average sleep duration
+- average sleep score
+- recent bedtime visibility
 - average steps
 - slipping metrics summary
 
@@ -166,6 +171,15 @@ The app must persist user settings and logs locally in browser storage.
 ### FR8. Import and Export
 
 The app must let the user export all data as JSON and import it back later.
+
+### FR9. Theme Preference
+
+The app must:
+
+- default to a light theme with a whitish background
+- use blue and black as the primary accent colors
+- provide a dark-mode toggle
+- persist the active theme locally so it survives reloads and data export or import
 
 ## Non-Functional Requirements
 
@@ -195,6 +209,7 @@ The core application must work without network access after the static files are
 
 The app must store:
 
+- user preferences
 - goals/settings
 - daily logs
 - derived metadata version
@@ -202,6 +217,13 @@ The app must store:
 ### Data Format
 
 Data should be stored as a versioned JSON document inside browser local storage to simplify export, import, and migration.
+
+Daily log records should support:
+
+- `sleepHours`: number or `null`
+- `sleepScore`: integer from 0 to 100 or `null`
+- `bedtime`: `HH:MM` or `null`
+- `preferences.theme`: `"light"` or `"dark"`
 
 ## Calculation Rules
 
@@ -219,6 +241,12 @@ Weekly adherence is the sum of target hits divided by the sum of applicable targ
 
 Monthly adherence is the sum of target hits divided by the sum of applicable targets across the current month.
 
+### Sleep Rules
+
+- sleep hours are always evaluated against `sleepMinimum`
+- sleep score is evaluated against `sleepScoreMinimum` only when a score exists for that log
+- bedtime is stored and shown in summaries, but is not yet a scored rule
+
 ### Status Model
 
 The app must use a three-state status model:
@@ -235,6 +263,8 @@ The exact thresholds may be configurable in code, but the model should remain si
 - the app must avoid visual clutter
 - the app must privilege readability over decoration
 - the app must make hits, misses, and drift easy to scan
+- the app must default to a light, high-contrast interface with blue and black accents
+- the app must offer a dark mode without changing information density or layout
 - the app must avoid multi-step onboarding or setup flows
 
 ## Acceptance Criteria
@@ -258,16 +288,3 @@ The exact thresholds may be configurable in code, but the model should remain si
 ### Portability
 
 - app works when opened from local disk
-- app can be published unchanged to GitHub Pages
-
-## Risks
-
-- browser `localStorage` behavior may vary under `file://` origins across browsers
-- local-only storage means data can be lost if browser storage is cleared
-- no backend means no automatic cross-device sync
-
-## Mitigations
-
-- include JSON export/import from the first version
-- keep storage format simple and versioned
-- avoid any dependency on server routing or API availability
