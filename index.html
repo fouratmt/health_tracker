@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personal Health Tracker</title>
+    <meta
+      name="description"
+      content="Static personal health accountability tracker with local-only storage."
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Personal Health Tracker</p>
+          <h1>Daily accountability without friction.</h1>
+          <p class="hero-copy">
+            Set simple targets, log once per day, and see instantly whether
+            your system is holding.
+          </p>
+        </div>
+        <div class="hero-status card">
+          <p class="label">Overall status</p>
+          <strong id="overall-status">On track</strong>
+          <p id="status-detail" class="muted">
+            No entries yet. Start with today&apos;s check-in.
+          </p>
+        </div>
+      </header>
+
+      <nav class="tab-bar" aria-label="Primary">
+        <button class="tab-button is-active" data-tab-target="dashboard">
+          Dashboard
+        </button>
+        <button class="tab-button" data-tab-target="checkin">Check-In</button>
+        <button class="tab-button" data-tab-target="progress">Progress</button>
+        <button class="tab-button" data-tab-target="goals">Goals</button>
+      </nav>
+
+      <main>
+        <section id="tab-dashboard" class="tab-panel is-active">
+          <div class="card-grid">
+            <article class="card metric-card">
+              <p class="label">Today</p>
+              <strong id="today-score">0 / 0</strong>
+              <span id="today-date" class="muted"></span>
+            </article>
+            <article class="card metric-card">
+              <p class="label">Weekly adherence</p>
+              <strong id="weekly-adherence">0%</strong>
+              <span id="weekly-detail" class="muted"></span>
+            </article>
+            <article class="card metric-card">
+              <p class="label">Monthly adherence</p>
+              <strong id="monthly-adherence">0%</strong>
+              <span id="monthly-detail" class="muted"></span>
+            </article>
+            <article class="card metric-card">
+              <p class="label">Workout streak</p>
+              <strong id="workout-streak">0 days</strong>
+              <span class="muted">Consecutive completed workout days</span>
+            </article>
+          </div>
+
+          <div class="two-column">
+            <article class="card">
+              <div class="section-heading">
+                <h2>Daily target summary</h2>
+                <p class="muted">Today&apos;s metric-by-metric result.</p>
+              </div>
+              <ul id="today-breakdown" class="summary-list"></ul>
+            </article>
+
+            <article class="card">
+              <div class="section-heading">
+                <h2>Slipping metrics</h2>
+                <p class="muted">Metrics with the weakest recent adherence.</p>
+              </div>
+              <ul id="slipping-metrics" class="summary-list"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="tab-checkin" class="tab-panel">
+          <article class="card form-card">
+            <div class="section-heading">
+              <h2>Daily check-in</h2>
+              <p class="muted">One quick review. Update any day if needed.</p>
+            </div>
+            <form id="checkin-form" class="form-grid">
+              <label>
+                <span>Date</span>
+                <input type="date" name="date" id="checkin-date" required />
+              </label>
+              <label>
+                <span>Weight (kg)</span>
+                <input type="number" name="weight" step="0.1" min="0" />
+              </label>
+              <label>
+                <span>Steps</span>
+                <input type="number" name="steps" step="1" min="0" />
+              </label>
+              <label>
+                <span>Sleep hours</span>
+                <input type="number" name="sleepHours" step="0.1" min="0" />
+              </label>
+              <label class="toggle-field">
+                <span>Workout done</span>
+                <input type="checkbox" name="workoutDone" />
+              </label>
+              <label class="toggle-field">
+                <span>Calories on target</span>
+                <input type="checkbox" name="caloriesOnTarget" />
+              </label>
+              <label class="toggle-field">
+                <span>Protein on target</span>
+                <input type="checkbox" name="proteinOnTarget" />
+              </label>
+              <label class="toggle-field">
+                <span>Water target met</span>
+                <input type="checkbox" name="waterTargetMet" />
+              </label>
+              <div class="form-actions">
+                <button type="submit" class="primary-button">Save entry</button>
+                <p id="checkin-feedback" class="muted"></p>
+              </div>
+            </form>
+          </article>
+        </section>
+
+        <section id="tab-progress" class="tab-panel">
+          <div class="two-column">
+            <article class="card">
+              <div class="section-heading">
+                <h2>Trend snapshot</h2>
+                <p class="muted">Recent numeric averages and direction.</p>
+              </div>
+              <ul id="trend-summary" class="summary-list"></ul>
+            </article>
+
+            <article class="card">
+              <div class="section-heading">
+                <h2>Recent entries</h2>
+                <p class="muted">Latest saved logs.</p>
+              </div>
+              <ul id="recent-entries" class="summary-list"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="tab-goals" class="tab-panel">
+          <div class="two-column">
+            <article class="card form-card">
+              <div class="section-heading">
+                <h2>Goals</h2>
+                <p class="muted">Keep the rules simple and stable.</p>
+              </div>
+              <form id="goals-form" class="form-grid">
+                <label>
+                  <span>Daily steps minimum</span>
+                  <input type="number" name="stepsMinimum" step="1" min="0" />
+                </label>
+                <label>
+                  <span>Sleep minimum (hours)</span>
+                  <input type="number" name="sleepMinimum" step="0.1" min="0" />
+                </label>
+                <label>
+                  <span>Weekly workout target</span>
+                  <input
+                    type="number"
+                    name="weeklyWorkoutTarget"
+                    step="1"
+                    min="0"
+                  />
+                </label>
+                <label>
+                  <span>Monthly calories target days</span>
+                  <input
+                    type="number"
+                    name="monthlyCaloriesTarget"
+                    step="1"
+                    min="0"
+                    max="31"
+                  />
+                </label>
+                <label>
+                  <span>Monthly protein target days</span>
+                  <input
+                    type="number"
+                    name="monthlyProteinTarget"
+                    step="1"
+                    min="0"
+                    max="31"
+                  />
+                </label>
+                <label class="toggle-field">
+                  <span>Track water as a daily target</span>
+                  <input type="checkbox" name="waterDaily" />
+                </label>
+                <div class="form-actions">
+                  <button type="submit" class="primary-button">
+                    Save goals
+                  </button>
+                  <p id="goals-feedback" class="muted"></p>
+                </div>
+              </form>
+            </article>
+
+            <article class="card">
+              <div class="section-heading">
+                <h2>Data</h2>
+                <p class="muted">All data stays local to this browser.</p>
+              </div>
+              <div class="stack-actions">
+                <button id="export-data" class="secondary-button">
+                  Export JSON
+                </button>
+                <label class="file-input">
+                  <span>Import JSON</span>
+                  <input id="import-data" type="file" accept="application/json" />
+                </label>
+                <p id="data-feedback" class="muted"></p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="js/constants.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/calculations.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
