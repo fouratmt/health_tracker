@@ -119,6 +119,19 @@
     }).format(date);
   }
 
+  function formatMonthShort(dateString) {
+    const date = parseISODate(dateString);
+
+    if (!date) {
+      return "";
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      timeZone: "UTC",
+    }).format(date);
+  }
+
   function pad(value) {
     return String(value).padStart(2, "0");
   }
@@ -207,6 +220,16 @@
         `;
       })
       .join("");
+  }
+
+  function chunkItems(items, size) {
+    const chunks = [];
+
+    for (let index = 0; index < items.length; index += size) {
+      chunks.push(items.slice(index, index + size));
+    }
+
+    return chunks;
   }
 
   function summarizeEvaluationGroups(results) {
@@ -326,6 +349,100 @@
         ],
       },
     ];
+  }
+
+  function buildHeatmapMonthLabels(weekStarts) {
+    let previousMonthKey = "";
+
+    return weekStarts.map(function (weekStart) {
+      const monthKey = weekStart.slice(0, 7);
+      const label = monthKey !== previousMonthKey ? formatMonthShort(weekStart) : "";
+      previousMonthKey = monthKey;
+      return label;
+    });
+  }
+
+  function formatStreakLabel(streak) {
+    if (!streak) {
+      return "No streak";
+    }
+
+    return `${streak} day${streak === 1 ? "" : "s"}`;
+  }
+
+  function formatHeatmapCoverage(marker) {
+    if (!marker.trackedDays) {
+      return "No logged days";
+    }
+
+    return `${marker.hitCount} hits / ${marker.trackedDays} logged days`;
+  }
+
+  function heatmapStatusLabel(status) {
+    if (status === "hit") {
+      return "Hit";
+    }
+
+    if (status === "miss") {
+      return "Miss";
+    }
+
+    if (status === "future") {
+      return "Future";
+    }
+
+    return "No entry";
+  }
+
+  function renderMarkerStreakMap(summary) {
+    const element = byId("marker-streak-map");
+    const streakMap = summary.markerStreakMap;
+    const monthLabels = buildHeatmapMonthLabels(streakMap.weekStarts);
+    const weekdayLabels = ["M", "T", "W", "T", "F", "S", "S"];
+
+    element.innerHTML = streakMap.markers
+      .map(function (marker) {
+        const weeks = chunkItems(marker.cells, 7);
+
+        return `
+          <article class="marker-heatmap-panel marker-panel marker-panel-${marker.group.toLowerCase()}">
+            <div class="marker-heatmap-head">
+              <div class="marker-heatmap-title">
+                <span class="summary-group-pill summary-group-pill-${marker.group.toLowerCase()}">${marker.group}</span>
+                <strong>${marker.label}</strong>
+              </div>
+              <div class="marker-heatmap-metrics">
+                <strong>${formatStreakLabel(marker.streak)}</strong>
+                <span>${formatHeatmapCoverage(marker)}</span>
+              </div>
+            </div>
+            <div class="marker-heatmap-months">
+              ${monthLabels.map(function (label) {
+                return `<span>${label}</span>`;
+              }).join("")}
+            </div>
+            <div class="marker-heatmap-board">
+              <div class="marker-heatmap-weekdays">
+                ${weekdayLabels.map(function (label) {
+                  return `<span>${label}</span>`;
+                }).join("")}
+              </div>
+              <div class="marker-heatmap-grid">
+                ${weeks.map(function (week) {
+                  return `
+                    <div class="marker-heatmap-week">
+                      ${week.map(function (cell) {
+                        return `<span class="heatmap-cell heatmap-cell-${cell.status}" title="${marker.label} / ${cell.date} / ${heatmapStatusLabel(cell.status)}"></span>`;
+                      }).join("")}
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
   }
 
   function renderDashboardGroupCards(summary) {
@@ -738,6 +855,7 @@
       "No saved entries"
     );
 
+    renderMarkerStreakMap(summary);
     renderTrendCards("trend-summary", buildTrendCards(summary));
 
     renderCompactList(

@@ -557,6 +557,145 @@ h2 {
   margin-top: 1rem;
 }
 
+.heatmap-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.heatmap-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.heatmap-legend .heatmap-cell {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.heatmap-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.marker-heatmap-panel {
+  gap: 0.85rem;
+}
+
+.marker-heatmap-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.marker-heatmap-title,
+.marker-heatmap-metrics {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.marker-heatmap-title strong,
+.marker-heatmap-metrics strong {
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.marker-heatmap-metrics {
+  justify-items: end;
+  text-align: right;
+}
+
+.marker-heatmap-metrics span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.marker-heatmap-months {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.28rem;
+  margin-left: 1.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.marker-heatmap-months span {
+  min-height: 1rem;
+}
+
+.marker-heatmap-board {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: start;
+}
+
+.marker-heatmap-weekdays {
+  display: grid;
+  grid-template-rows: repeat(7, 0.82rem);
+  gap: 0.28rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.marker-heatmap-weekdays span {
+  display: flex;
+  align-items: center;
+}
+
+.marker-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.28rem;
+}
+
+.marker-heatmap-week {
+  display: grid;
+  grid-template-rows: repeat(7, 0.82rem);
+  gap: 0.28rem;
+}
+
+.heatmap-cell {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border-radius: 0.28rem;
+  border: 1px solid transparent;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.heatmap-cell-hit {
+  background: rgba(37, 99, 235, 0.85);
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+.heatmap-cell-miss {
+  background: rgba(248, 113, 113, 0.3);
+  border-color: rgba(248, 113, 113, 0.22);
+}
+
+.heatmap-cell-empty {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.08);
+}
+
+.heatmap-cell-future {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.08);
+}
+
 .surface-card {
   background: var(--surface-card-bg);
 }
@@ -1109,6 +1248,10 @@ h2 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .heatmap-panel-grid {
+    grid-template-columns: 1fr;
+  }
+
   .marker-group-grid {
     grid-template-columns: 1fr;
   }
@@ -1159,6 +1302,21 @@ h2 {
   .trend-grid,
   .data-action-grid {
     grid-template-columns: 1fr;
+  }
+
+  .marker-heatmap-head {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .marker-heatmap-metrics {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .marker-heatmap-months {
+    margin-left: 0;
+    padding-left: 1.45rem;
   }
 
   .checkin-date-toolbar {

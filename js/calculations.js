@@ -1,4 +1,23 @@
 (function () {
+  const STREAK_MARKERS = [
+    {
+      key: "workoutDone",
+      label: "Workout",
+    },
+    {
+      key: "steps",
+      label: "Steps",
+    },
+    {
+      key: "sleepHours",
+      label: "Sleep",
+    },
+    {
+      key: "noSugarIntake",
+      label: "No sugar",
+    },
+  ];
+
   function getMetricGroup(key) {
     if (key === "sleepHours" || key === "sleepScore") {
       return "Sleep";
@@ -42,6 +61,12 @@
   function differenceInDays(laterDateString, earlierDateString) {
     const msPerDay = 24 * 60 * 60 * 1000;
     return Math.round((parseISODate(laterDateString) - parseISODate(earlierDateString)) / msPerDay);
+  }
+
+  function shiftDateKey(dateString, dayOffset) {
+    const date = parseISODate(dateString);
+    date.setDate(date.getDate() + dayOffset);
+    return toLocalDateKey(date);
   }
 
   function sortLogs(logs) {
@@ -390,6 +415,83 @@
     return "Slightly off track";
   }
 
+  function buildMarkerStreakMap(logs, goals, todayDate) {
+    const weekCount = 12;
+    const totalDays = weekCount * 7;
+    const currentWeekStart = toLocalDateKey(getWeekStart(todayDate));
+    const startDate = shiftDateKey(currentWeekStart, -((weekCount - 1) * 7));
+    const weekStarts = Array.from({ length: weekCount }, function (_, index) {
+      return shiftDateKey(startDate, index * 7);
+    });
+    const evaluationCache = {};
+
+    return {
+      weekStarts,
+      markers: STREAK_MARKERS.map(function (marker) {
+        const cells = [];
+        let hitCount = 0;
+        let trackedDays = 0;
+        let streak = 0;
+
+        for (let dayIndex = 0; dayIndex < totalDays; dayIndex += 1) {
+          const date = shiftDateKey(startDate, dayIndex);
+          let status = "future";
+
+          if (date <= todayDate) {
+            const log = logs[date];
+
+            if (!log) {
+              status = "empty";
+            } else {
+              trackedDays += 1;
+              const evaluation = evaluationCache[date]
+                || (evaluationCache[date] = evaluateDailyLog(log, goals, logs));
+              const result = evaluation.results.find(function (item) {
+                return item.key === marker.key;
+              });
+
+              status = result && result.hit ? "hit" : "miss";
+
+              if (status === "hit") {
+                hitCount += 1;
+              }
+            }
+          }
+
+          cells.push({
+            date,
+            status,
+          });
+        }
+
+        for (let cellIndex = cells.length - 1; cellIndex >= 0; cellIndex -= 1) {
+          const cell = cells[cellIndex];
+
+          if (cell.date > todayDate) {
+            continue;
+          }
+
+          if (cell.status === "hit") {
+            streak += 1;
+            continue;
+          }
+
+          break;
+        }
+
+        return {
+          key: marker.key,
+          label: marker.label,
+          group: getMetricGroup(marker.key),
+          hitCount,
+          trackedDays,
+          streak,
+          cells,
+        };
+      }),
+    };
+  }
+
   function buildSummary(state) {
     const todayDate = getTodayISODate();
     const todayDateValue = parseISODate(todayDate);
@@ -462,6 +564,7 @@
       recentEntries: allEntries.slice(-7).reverse(),
       latestEntry,
       loggedDays: allEntries.length,
+      markerStreakMap: buildMarkerStreakMap(state.logs, state.goals, todayDate),
       weeklyWorkoutCount: countHits(currentWeekEntries, "workoutDone"),
       monthlyCaloriesHits: countHits(currentMonthEntries, "caloriesOnTarget"),
     };
