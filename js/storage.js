@@ -90,14 +90,6 @@
         normalizeNumber(source.weeklyWorkoutTarget) ?? DEFAULT_GOALS.weeklyWorkoutTarget,
       monthlyCaloriesTarget:
         normalizeNumber(source.monthlyCaloriesTarget) ?? DEFAULT_GOALS.monthlyCaloriesTarget,
-      waterDaily:
-        source.waterDaily === undefined ? DEFAULT_GOALS.waterDaily : normalizeBoolean(source.waterDaily),
-      noSugarDaily:
-        source.noSugarDaily === undefined ? DEFAULT_GOALS.noSugarDaily : normalizeBoolean(source.noSugarDaily),
-      weightTrendDirection:
-        typeof source.weightTrendDirection === "string"
-          ? source.weightTrendDirection
-          : DEFAULT_GOALS.weightTrendDirection,
     };
   }
 

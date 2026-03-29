@@ -155,14 +155,132 @@
       .join("");
   }
 
-  function buildAverage(values) {
-    if (!values.length) {
-      return null;
+  function renderTrendCards(elementId, items) {
+    const element = byId(elementId);
+
+    if (!items.length) {
+      element.innerHTML = `<article class="trend-card trend-card-neutral"><p class="label">Trends</p><strong>No data</strong><span class="muted">Need more history to draw movement.</span></article>`;
+      return;
     }
 
-    return values.reduce(function (sum, value) {
-      return sum + value;
-    }, 0) / values.length;
+    element.innerHTML = items
+      .map(function (item) {
+        return `
+          <article class="trend-card trend-card-${item.tone}">
+            <div class="trend-card-head">
+              <p class="label">${item.title}</p>
+              <span class="trend-chip ${item.toneClass}">${item.directionLabel}</span>
+            </div>
+            <strong>${item.valueLabel}</strong>
+            <span>${item.deltaLabel}</span>
+            <small>${item.supportingLabel}</small>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  function formatSignedNumber(value, digits) {
+    const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+    return `${sign}${Math.abs(value).toFixed(digits)}`;
+  }
+
+  function formatSignedDuration(value) {
+    const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+    const formatted = calculations.formatDurationFromMinutes(Math.abs(value));
+    return formatted ? `${sign}${formatted}` : "No data";
+  }
+
+  function trendToneClass(tone) {
+    if (tone === "positive") {
+      return "status-on-track";
+    }
+
+    if (tone === "negative") {
+      return "status-off-track";
+    }
+
+    return "muted-chip";
+  }
+
+  function trendDirectionLabel(trend) {
+    if (!trend.previous) {
+      return "Building";
+    }
+
+    if (trend.direction === "up") {
+      return "Up";
+    }
+
+    if (trend.direction === "down") {
+      return "Down";
+    }
+
+    return "Stable";
+  }
+
+  function buildTrendCards(summary) {
+    const weightTrend = summary.metricTrends.weight;
+    const stepsTrend = summary.metricTrends.steps;
+    const sleepDurationTrend = summary.metricTrends.sleepDuration;
+    const sleepScoreTrend = summary.metricTrends.sleepScore;
+
+    return [
+      {
+        title: "Weight movement",
+        tone: weightTrend.tone,
+        toneClass: trendToneClass(weightTrend.tone),
+        directionLabel: trendDirectionLabel(weightTrend),
+        valueLabel: weightTrend.latest ? `${weightTrend.latest.value.toFixed(1)} kg` : "No data",
+        deltaLabel: weightTrend.previous
+          ? `${formatSignedNumber(weightTrend.delta, 1)} kg vs prior weigh-in`
+          : "Need two weigh-ins",
+        supportingLabel: weightTrend.previous
+          ? `Previous ${weightTrend.previous.value.toFixed(1)} kg on ${formatDateShort(weightTrend.previous.date)}`
+          : "Start logging weight to expose movement",
+      },
+      {
+        title: "Steps change",
+        tone: stepsTrend.tone,
+        toneClass: trendToneClass(stepsTrend.tone),
+        directionLabel: trendDirectionLabel(stepsTrend),
+        valueLabel: stepsTrend.latest ? `${Math.round(stepsTrend.latest.value)} steps` : "No data",
+        deltaLabel: stepsTrend.previous
+          ? `${formatSignedNumber(stepsTrend.delta, 0)} vs prior log`
+          : "Need two step logs",
+        supportingLabel: stepsTrend.previous
+          ? `Previous ${Math.round(stepsTrend.previous.value)} on ${formatDateShort(stepsTrend.previous.date)}`
+          : "Track steps consistently for a movement read",
+      },
+      {
+        title: "Sleep duration",
+        tone: sleepDurationTrend.tone,
+        toneClass: trendToneClass(sleepDurationTrend.tone),
+        directionLabel: trendDirectionLabel(sleepDurationTrend),
+        valueLabel: sleepDurationTrend.latest
+          ? calculations.formatDurationFromMinutes(sleepDurationTrend.latest.value)
+          : "No data",
+        deltaLabel: sleepDurationTrend.previous
+          ? `${formatSignedDuration(sleepDurationTrend.delta)} vs prior sleep log`
+          : "Need two sleep logs",
+        supportingLabel: sleepDurationTrend.previous
+          ? `Previous ${calculations.formatDurationFromMinutes(sleepDurationTrend.previous.value)} on ${formatDateShort(sleepDurationTrend.previous.date)}`
+          : "Sleep duration trend builds as logs accumulate",
+      },
+      {
+        title: "Sleep score",
+        tone: sleepScoreTrend.tone,
+        toneClass: trendToneClass(sleepScoreTrend.tone),
+        directionLabel: trendDirectionLabel(sleepScoreTrend),
+        valueLabel: sleepScoreTrend.latest ? `${Math.round(sleepScoreTrend.latest.value)} / 100` : "No data",
+        deltaLabel: sleepScoreTrend.previous
+          ? `${formatSignedNumber(sleepScoreTrend.delta, 0)} vs prior score`
+          : "Need two scored nights",
+        supportingLabel: sleepScoreTrend.previous
+          ? `Previous ${Math.round(sleepScoreTrend.previous.value)} on ${formatDateShort(sleepScoreTrend.previous.date)}`
+          : "Sleep score trend appears once scores repeat",
+      },
+    ];
   }
 
   function getSelectedLog() {
@@ -254,41 +372,6 @@
       summary.todayEvaluation.total
     );
     const recentEntries = summary.recentEntries;
-    const stepsValues = recentEntries
-      .map(function (entry) {
-        return Number(entry.steps || 0);
-      })
-      .filter(function (value) {
-        return value > 0;
-      });
-    const sleepValues = recentEntries
-      .map(function (entry) {
-        return calculations.parseDurationToMinutes(entry.sleepHours);
-      })
-      .filter(function (value) {
-        return value !== null && value > 0;
-      });
-    const sleepScoreValues = recentEntries
-      .map(function (entry) {
-        return typeof entry.sleepScore === "number" ? entry.sleepScore : null;
-      })
-      .filter(function (value) {
-        return value !== null;
-      });
-    const weightValues = recentEntries
-      .map(function (entry) {
-        return typeof entry.weight === "number" ? entry.weight : null;
-      })
-      .filter(function (value) {
-        return value !== null;
-      });
-    const averageSteps = buildAverage(stepsValues);
-    const averageSleep = buildAverage(sleepValues);
-    const averageSleepScore = buildAverage(sleepScoreValues);
-    const latestBedtimeEntry = recentEntries.find(function (entry) {
-      return !!entry.bedtime;
-    });
-
     byId("overall-status").textContent = summary.overallStatus;
     byId("overall-status").className = statusClass(summary.overallStatus);
     byId("status-detail").textContent = summary.todayLog
@@ -371,39 +454,7 @@
       "No saved entries"
     );
 
-    renderCompactList(
-      "trend-summary",
-      [
-        {
-          title: "Weight trend",
-          detail: summary.weightTrend.detail,
-        },
-        {
-          title: "Average steps",
-          detail: averageSteps !== null ? `${Math.round(averageSteps)} steps` : "No data",
-        },
-        {
-          title: "Average sleep",
-          detail:
-            averageSleep !== null
-              ? calculations.formatDurationFromMinutes(averageSleep)
-              : "No data",
-        },
-        {
-          title: "Average sleep score",
-          detail: averageSleepScore !== null ? `${averageSleepScore.toFixed(0)} / 100` : "No data",
-        },
-        {
-          title: "Latest weight",
-          detail: weightValues.length ? `${weightValues[0].toFixed(1)} kg` : "No data",
-        },
-        {
-          title: "Latest bedtime",
-          detail: latestBedtimeEntry ? formatBedtime(latestBedtimeEntry.bedtime) : "No data",
-        },
-      ],
-      "No trend data"
-    );
+    renderTrendCards("trend-summary", buildTrendCards(summary));
 
     renderCompactList(
       "recent-entries",
@@ -440,12 +491,12 @@
           detail: `${state.goals.sleepScoreMinimum}+ when logged`,
         },
         {
-          title: "Water tracking",
-          detail: state.goals.waterDaily ? "Enabled daily" : "Disabled",
+          title: "Water rule",
+          detail: "Always scored / around 2 L for the day",
         },
         {
-          title: "No sugar tracking",
-          detail: state.goals.noSugarDaily ? "Enabled daily" : "Disabled",
+          title: "No sugar rule",
+          detail: "Always scored / sugar-free day",
         },
       ],
       "No consistency data"
@@ -460,8 +511,6 @@
     goalsForm.sleepScoreMinimum.value = state.goals.sleepScoreMinimum;
     goalsForm.weeklyWorkoutTarget.value = state.goals.weeklyWorkoutTarget;
     goalsForm.monthlyCaloriesTarget.value = state.goals.monthlyCaloriesTarget;
-    goalsForm.waterDaily.checked = !!state.goals.waterDaily;
-    goalsForm.noSugarDaily.checked = !!state.goals.noSugarDaily;
   }
 
   function handleThemeToggle() {
@@ -478,6 +527,13 @@
 
   function handleCheckinDateChange(event) {
     selectedDate = event.currentTarget.value || calculations.getTodayISODate();
+    populateCheckinForm();
+    renderCheckinPreview();
+  }
+
+  function openTodayCheckin() {
+    selectedDate = calculations.getTodayISODate();
+    activateTab("checkin");
     populateCheckinForm();
     renderCheckinPreview();
   }
@@ -526,8 +582,6 @@
         sleepScoreMinimum: normalizeNumber(form.sleepScoreMinimum.value) || 0,
         weeklyWorkoutTarget: normalizeNumber(form.weeklyWorkoutTarget.value) || 0,
         monthlyCaloriesTarget: normalizeNumber(form.monthlyCaloriesTarget.value) || 0,
-        waterDaily: form.waterDaily.checked,
-        noSugarDaily: form.noSugarDaily.checked,
       },
     };
 
@@ -582,6 +636,11 @@
   function bindTabs() {
     Array.from(document.querySelectorAll("[data-tab-target]")).forEach(function (button) {
       button.addEventListener("click", function () {
+        if (button.dataset.resetDate === "today" && button.dataset.tabTarget === "checkin") {
+          openTodayCheckin();
+          return;
+        }
+
         activateTab(button.dataset.tabTarget);
       });
     });

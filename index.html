@@ -46,7 +46,11 @@
             is holding or starting to drift.
           </p>
           <div class="hero-actions">
-            <button class="primary-button" data-tab-target="checkin">
+            <button
+              class="primary-button"
+              data-tab-target="checkin"
+              data-reset-date="today"
+            >
               Log today
             </button>
             <button class="ghost-button" data-tab-target="progress">
@@ -264,7 +268,7 @@
                     <input type="checkbox" name="caloriesOnTarget" />
                   </label>
                   <label class="toggle-field">
-                    <span>Water target met</span>
+                    <span>Water target met (~2 L)</span>
                     <input type="checkbox" name="waterTargetMet" />
                   </label>
                   <label class="toggle-field">
@@ -310,10 +314,11 @@
               <div class="section-heading">
                 <h2>Trend snapshot</h2>
                 <p class="muted">
-                  A compact view of recent averages and directional changes.
+                  The latest directional shift across the metrics that move the
+                  fastest.
                 </p>
               </div>
-              <ul id="trend-summary" class="summary-list compact-list"></ul>
+              <div id="trend-summary" class="trend-grid"></div>
             </article>
 
             <article class="card">
@@ -382,14 +387,15 @@
                     max="31"
                   />
                 </label>
-                <label class="toggle-field">
-                  <span>Track water as a daily target</span>
-                  <input type="checkbox" name="waterDaily" />
-                </label>
-                <label class="toggle-field">
-                  <span>Track no sugar as a daily target</span>
-                  <input type="checkbox" name="noSugarDaily" />
-                </label>
+                <div class="rule-note">
+                  <p class="label">Always-on daily rules</p>
+                  <strong>Water and no sugar are always part of the score.</strong>
+                  <span class="muted">
+                    Count water as a hit when you reach around 2 liters for the
+                    day. No sugar is tracked every day without a separate goal
+                    toggle.
+                  </span>
+                </div>
                 <div class="form-actions">
                   <button type="submit" class="primary-button">
                     Save goals
@@ -399,27 +405,49 @@
               </form>
             </article>
 
-            <article class="card">
+            <article class="card data-pane">
               <div class="section-heading">
+                <p class="eyebrow">Portable and private</p>
                 <h2>Data</h2>
                 <p class="muted">
-                  All data stays local to this browser unless you export it.
+                  Everything stays in this browser until you move it yourself.
                 </p>
               </div>
-              <div class="stack-actions">
-                <p class="callout">
-                  Use export regularly if you want a durable backup across
-                  browsers or devices.
-                </p>
-                <button id="export-data" class="secondary-button">
-                  Export JSON
+              <div class="data-pane-highlight">
+                <strong>Private by default</strong>
+                <span>
+                  Export a snapshot before switching browser or device. Import
+                  restores a full local state in one step.
+                </span>
+              </div>
+              <div class="data-action-grid">
+                <button id="export-data" class="secondary-button data-action-button">
+                  <strong>Export snapshot</strong>
+                  <span>Download a JSON backup of goals, logs, and theme.</span>
                 </button>
-                <label class="file-input">
-                  <span>Import JSON</span>
+                <label class="file-input data-action-upload">
+                  <span>
+                    <strong>Import snapshot</strong>
+                    <small>Replace the current browser state from a JSON backup.</small>
+                  </span>
                   <input id="import-data" type="file" accept="application/json" />
                 </label>
-                <p id="data-feedback" class="muted"></p>
               </div>
+              <div class="data-pane-details">
+                <div>
+                  <strong>Included</strong>
+                  <span>Goals, daily logs, theme preference, and schema version.</span>
+                </div>
+                <div>
+                  <strong>Storage model</strong>
+                  <span>Local-only JSON in browser storage until you export it.</span>
+                </div>
+                <div>
+                  <strong>Import behavior</strong>
+                  <span>Import replaces the current local snapshot with the chosen backup.</span>
+                </div>
+              </div>
+              <p id="data-feedback" class="data-feedback muted"></p>
             </article>
           </div>
         </section>

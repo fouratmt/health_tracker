@@ -13,8 +13,8 @@ Snapshot:
 - The core static app shell is implemented and fully wired.
 - The visual system is now light-first with white surfaces, blue and black accents, and a persistent dark-mode toggle.
 - Sleep tracking now stores duration as `HH:MM` alongside sleep score and bedtime.
-- Storage normalization now upgrades persisted data into schema version `4`.
-- Optional no-sugar tracking is wired as a daily scored rule.
+- Storage normalization now upgrades persisted data into schema version `5`.
+- Water and no sugar are always-on daily scored rules.
 
 ## Status Legend
 
@@ -46,9 +46,8 @@ Snapshot:
 | Sleep score minimum goal | PRD FR1 | Implemented | Stored in `state.goals.sleepScoreMinimum` and evaluated when a log includes `sleepScore` | Historical logs without a score are still usable |
 | Weekly workout target | PRD FR1, FR4 | Implemented | Target is editable and rendered alongside weekly workout pace | Overall status still comes from adherence percentages rather than a separate workout-target rule |
 | Monthly calorie target | PRD FR1, FR4 | Implemented | Monthly target days are editable and shown against current counts | End-to-end for pacing summaries |
-| Daily hydration goal toggle | PRD FR1 | Implemented | `waterDaily` controls whether water is included in daily evaluation | End-to-end |
-| Daily no-sugar goal toggle | PRD FR1 | Implemented | `noSugarDaily` controls whether sugar avoidance is included in daily evaluation | End-to-end |
-| Weight trend goal direction | PRD FR1 | Partial | `DEFAULT_GOALS` still carries `weightTrendDirection` | No UI control or scoring path uses it yet |
+| Always-on hydration and no-sugar rules | PRD calculation rules, FR3 | Implemented | Water and no sugar are always part of the daily evaluation instead of goal toggles | Water is documented as roughly 2 liters for a hit |
+| Weight trend direction assumption | Product simplification | Implemented | Weight movement is always interpreted as better when trending down | No configuration is exposed or stored |
 
 ## Daily Check-In and Logging
 
@@ -67,8 +66,8 @@ Snapshot:
 | Daily target hit count and total applicable targets | PRD FR3 | Implemented | `evaluateDailyLog()` returns `hits`, `total`, and per-metric results | End-to-end |
 | Sleep duration scoring | PRD sleep rules | Implemented | Daily evaluation compares `sleepHours` as `HH:MM` against `sleepMinimum` | Legacy decimal values are normalized on load |
 | Sleep score scoring | PRD sleep rules | Implemented | Daily evaluation adds a `Sleep score` rule when `sleepScore` is present | Missing scores are treated as non-applicable instead of forced misses |
-| No-sugar scoring | PRD calculation rules, FR3 | Implemented | Daily evaluation adds `No sugar` only when `noSugarDaily` is enabled | End-to-end |
-| Per-metric hit or miss status | PRD FR3 | Implemented | Workout, steps, calories, sleep duration, sleep score, and optional water or no-sugar rules are evaluated individually | End-to-end |
+| No-sugar scoring | PRD calculation rules, FR3 | Implemented | Daily evaluation always adds `No sugar` as a binary daily rule | End-to-end |
+| Per-metric hit or miss status | PRD FR3 | Implemented | Workout, steps, calories, sleep duration, sleep score, and always-on water and no-sugar rules are evaluated individually | End-to-end |
 | Weekly adherence percentage | PRD FR4 | Implemented | `calculatePeriodAdherence()` computes current-week adherence | Rendered on the dashboard |
 | Monthly adherence percentage | PRD FR4 | Implemented | `calculatePeriodAdherence()` computes current-month adherence | Rendered on the dashboard |
 | Weight trend summary | PRD FR6 | Implemented | `calculateWeightTrend()` compares first and last recorded weigh-ins | Still a simple text summary, not a chart |
@@ -85,8 +84,8 @@ Snapshot:
 | Today hit or miss breakdown | PRD FR3, FR5 | Implemented | `today-breakdown` is rendered from per-metric evaluation results | End-to-end |
 | Goal pacing board | PRD FR4, FR5 | Implemented | Dashboard shows weekly workouts, monthly nutrition pacing, and the combined sleep target | End-to-end |
 | Recent entries summaries | PRD FR5, FR6 | Implemented | Dashboard and Progress lists show steps plus sleep duration, score, and bedtime context | End-to-end |
-| Progress trend snapshot | PRD FR6 | Implemented | Progress view shows weight trend, average steps, average sleep duration, average sleep score, latest weight, and latest bedtime | End-to-end |
-| Consistency board | Progress surface intent, FR6 | Implemented | Progress view renders adherence, workout pace, nutrition pace, sleep score target, water tracking, and no-sugar tracking | End-to-end |
+| Progress trend snapshot | PRD FR6 | Implemented | Progress view shows directional cards for weight movement, steps, sleep duration, and sleep score | End-to-end |
+| Consistency board | Progress surface intent, FR6 | Implemented | Progress view renders adherence, workout pace, nutrition pace, sleep score target, and the always-on water and no-sugar rules | End-to-end |
 | Recent adherence history over time | PRD FR6 | Partial | The app exposes current adherence summaries and pacing boards | No day-by-day adherence chart or timeline yet |
 | Recent weight history | PRD FR6 | Partial | The app exposes trend text and latest weight summary | There is still no dedicated history list or chart of weigh-ins |
 
@@ -95,7 +94,7 @@ Snapshot:
 | Feature | Docs | Status | Current implementation | Gap or note |
 | --- | --- | --- | --- | --- |
 | Local persistence of goals and logs | PRD FR7 | Implemented | `js/storage.js` reads and writes one browser-local state document | End-to-end |
-| Versioned JSON storage document | PRD data requirements | Implemented | Stored state now uses version `4` | Version upgrades are handled by normalization rather than explicit migrations |
+| Versioned JSON storage document | PRD data requirements | Implemented | Stored state now uses version `5` | Version upgrades are handled by normalization rather than explicit migrations |
 | Imported and legacy state normalization | Technical Architecture reliability strategy | Implemented | `normalizeState()` sanitizes preferences, goals, and logs, including `sleepScore` and `bedtime` | Good baseline for backward compatibility |
 | JSON export | PRD FR8 | Implemented | `handleExport()` downloads the normalized state document | End-to-end |
 | JSON import | PRD FR8 | Implemented | `handleImport()` parses JSON and persists the normalized result | Invalid JSON still fails fast with a generic error message |

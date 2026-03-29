@@ -185,10 +185,9 @@ Current examples:
 - `sleepScoreMinimum`
 - `weeklyWorkoutTarget`
 - `monthlyCaloriesTarget`
-- `waterDaily`
-- `noSugarDaily`
 
 Bedtime is currently recorded for context and review, not as a scored rule.
+Water and no sugar are always-on daily rules rather than configurable goals.
 
 ### 3. Evaluation
 
@@ -233,7 +232,7 @@ The primary flow should be a single daily check-in:
 5. Enter sleep duration
 6. Enter sleep score if available
 7. Enter bedtime
-8. Mark water target met or not
+8. Mark water target met or not when you reach around 2 liters
 9. Mark no sugar intake or not
 10. View the instant daily summary
 

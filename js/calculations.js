@@ -140,23 +140,19 @@
       });
     }
 
-    if (goals.waterDaily) {
-      rules.push({
-        key: "waterTargetMet",
-        label: "Water",
-        hit: !!log.waterTargetMet,
-        detail: log.waterTargetMet ? "met" : "missed",
-      });
-    }
+    rules.push({
+      key: "waterTargetMet",
+      label: "Water",
+      hit: !!log.waterTargetMet,
+      detail: log.waterTargetMet ? "around 2 L reached" : "below the ~2 L target",
+    });
 
-    if (goals.noSugarDaily) {
-      rules.push({
-        key: "noSugarIntake",
-        label: "No sugar",
-        hit: !!log.noSugarIntake,
-        detail: log.noSugarIntake ? "avoided" : "consumed",
-      });
-    }
+    rules.push({
+      key: "noSugarIntake",
+      label: "No sugar",
+      hit: !!log.noSugarIntake,
+      detail: log.noSugarIntake ? "no sugar logged" : "sugar logged",
+    });
 
     const hits = rules.filter(function (rule) {
       return rule.hit;
@@ -214,6 +210,71 @@
     return entries.filter(function (entry) {
       return !!entry[key];
     }).length;
+  }
+
+  function calculateMetricTrend(logs, selector, options) {
+    const settings = options || {};
+    const epsilon = typeof settings.epsilon === "number" ? settings.epsilon : 0;
+    const preferredDirection = settings.preferredDirection || "up";
+    const series = sortLogs(logs)
+      .map(function (entry) {
+        return {
+          date: entry.date,
+          value: selector(entry),
+        };
+      })
+      .filter(function (point) {
+        return typeof point.value === "number" && !Number.isNaN(point.value);
+      });
+
+    if (!series.length) {
+      return {
+        hasData: false,
+        direction: "flat",
+        tone: "neutral",
+        latest: null,
+        previous: null,
+        delta: null,
+      };
+    }
+
+    const latest = series[series.length - 1];
+    const previous = series.length > 1 ? series[series.length - 2] : null;
+
+    if (!previous) {
+      return {
+        hasData: true,
+        direction: "flat",
+        tone: "neutral",
+        latest,
+        previous: null,
+        delta: null,
+      };
+    }
+
+    const delta = latest.value - previous.value;
+    let direction = "flat";
+
+    if (delta > epsilon) {
+      direction = "up";
+    } else if (delta < -epsilon) {
+      direction = "down";
+    }
+
+    let tone = "neutral";
+
+    if (direction !== "flat") {
+      tone = direction === preferredDirection ? "positive" : "negative";
+    }
+
+    return {
+      hasData: true,
+      direction,
+      tone,
+      latest,
+      previous,
+      delta,
+    };
   }
 
   function calculateWeightTrend(logs) {
@@ -287,7 +348,7 @@
       .slice(0, 3);
   }
 
-  function deriveOverallStatus(todayEvaluation, weeklyAdherence, monthlyAdherence) {
+  function deriveOverallStatus(weeklyAdherence, monthlyAdherence) {
     if (weeklyAdherence.total === 0 && monthlyAdherence.total === 0) {
       return "Slightly off track";
     }
@@ -330,7 +391,7 @@
       return getMonthKey(entry.date) === monthKey && entryDate <= todayDateValue;
     });
 
-    const overallStatus = deriveOverallStatus(todayEvaluation, weeklyAdherence, monthlyAdherence);
+    const overallStatus = deriveOverallStatus(weeklyAdherence, monthlyAdherence);
     const weightTrend = calculateWeightTrend(state.logs);
     const latestEntry = allEntries.length ? allEntries[allEntries.length - 1] : null;
 
@@ -346,6 +407,32 @@
       }),
       slippingMetrics: calculateSlippingMetrics(state.logs, state.goals),
       weightTrend,
+      metricTrends: {
+        weight: calculateMetricTrend(state.logs, function (entry) {
+          return typeof entry.weight === "number" ? entry.weight : null;
+        }, {
+          epsilon: 0.05,
+          preferredDirection: "down",
+        }),
+        steps: calculateMetricTrend(state.logs, function (entry) {
+          return typeof entry.steps === "number" ? entry.steps : null;
+        }, {
+          epsilon: 50,
+          preferredDirection: "up",
+        }),
+        sleepDuration: calculateMetricTrend(state.logs, function (entry) {
+          return parseDurationToMinutes(entry.sleepHours);
+        }, {
+          epsilon: 5,
+          preferredDirection: "up",
+        }),
+        sleepScore: calculateMetricTrend(state.logs, function (entry) {
+          return typeof entry.sleepScore === "number" ? entry.sleepScore : null;
+        }, {
+          epsilon: 1,
+          preferredDirection: "up",
+        }),
+      },
       recentEntries: allEntries.slice(-7).reverse(),
       latestEntry,
       loggedDays: allEntries.length,

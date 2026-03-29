@@ -102,8 +102,6 @@ The app must allow the user to define and update active targets for:
 - calorie adherence
 - sleep minimum
 - sleep score minimum
-- hydration completion
-- no sugar completion
 
 ### FR2. Daily Check-In
 
@@ -158,12 +156,12 @@ The dashboard must display:
 
 The progress view must display:
 
-- recent weight history summary
+- recent weight movement
 - recent adherence summaries
-- average sleep duration
-- average sleep score
+- recent sleep duration change
+- recent sleep score change
 - recent bedtime visibility
-- average steps
+- recent steps change
 - slipping metrics summary
 
 ### FR7. Local Persistence
@@ -226,7 +224,6 @@ Daily log records should support:
 - `sleepScore`: integer from 0 to 100 or `null`
 - `bedtime`: `HH:MM` or `null`
 - `noSugarIntake`: boolean
-- `goals.noSugarDaily`: boolean
 - `preferences.theme`: `"light"` or `"dark"`
 
 ## Calculation Rules
@@ -250,7 +247,8 @@ Monthly adherence is the sum of target hits divided by the sum of applicable tar
 - sleep duration is always evaluated against `sleepMinimum`
 - sleep score is evaluated against `sleepScoreMinimum` only when a score exists for that log
 - bedtime is stored and shown in summaries, but is not yet a scored rule
-- no sugar is evaluated only when `noSugarDaily` is enabled
+- water is always evaluated as a binary daily rule; a hit means around 2 liters for the day
+- no sugar is always evaluated as a binary daily rule
 
 ### Status Model
 

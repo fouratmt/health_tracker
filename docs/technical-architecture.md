@@ -69,7 +69,7 @@ Responsibilities:
 - call calculation functions
 - render computed outputs into the DOM
 - handle import and export actions
-- populate and edit per-day logs including sleep duration, sleep score, bedtime, and optional no-sugar tracking
+- populate and edit per-day logs including sleep duration, sleep score, bedtime, water, and no-sugar tracking
 
 This layer should contain wiring and UI flow logic, not business rules.
 
@@ -143,7 +143,7 @@ Example shape:
 
 ```json
 {
-  "version": 4,
+  "version": 5,
   "preferences": {
     "theme": "light"
   },
@@ -152,10 +152,7 @@ Example shape:
     "sleepMinimum": "07:00",
     "sleepScoreMinimum": 80,
     "weeklyWorkoutTarget": 4,
-    "monthlyCaloriesTarget": 24,
-    "waterDaily": true,
-    "noSugarDaily": false,
-    "weightTrendDirection": "down"
+    "monthlyCaloriesTarget": 24
   },
   "logs": {
     "2026-03-28": {
