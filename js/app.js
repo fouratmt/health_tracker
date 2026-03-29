@@ -65,20 +65,71 @@
     render();
   }
 
+  function parseISODate(dateString) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString || "");
+
+    if (!match) {
+      return null;
+    }
+
+    return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  }
+
   function formatDateLong(dateString) {
+    const date = parseISODate(dateString);
+
+    if (!date) {
+      return "Unknown date";
+    }
+
     return new Intl.DateTimeFormat(undefined, {
       weekday: "short",
       month: "short",
       day: "numeric",
       year: "numeric",
-    }).format(new Date(`${dateString}T00:00:00`));
+      timeZone: "UTC",
+    }).format(date);
   }
 
   function formatDateShort(dateString) {
+    const date = parseISODate(dateString);
+
+    if (!date) {
+      return "Unknown date";
+    }
+
     return new Intl.DateTimeFormat(undefined, {
       month: "short",
       day: "numeric",
-    }).format(new Date(`${dateString}T00:00:00`));
+      timeZone: "UTC",
+    }).format(date);
+  }
+
+  function formatWeekday(dateString) {
+    const date = parseISODate(dateString);
+
+    if (!date) {
+      return "Unknown day";
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "long",
+      timeZone: "UTC",
+    }).format(date);
+  }
+
+  function pad(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function toISODate(date) {
+    return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+  }
+
+  function shiftISODate(dateString, dayOffset) {
+    const date = parseISODate(dateString) || parseISODate(calculations.getTodayISODate());
+    date.setUTCDate(date.getUTCDate() + dayOffset);
+    return toISODate(date);
   }
 
   function describeScoreStatus(hasEntry, hits, total) {
@@ -287,6 +338,11 @@
     return state.logs[selectedDate] || null;
   }
 
+  function getCheckinDateValue() {
+    const dateInput = byId("checkin-date");
+    return (dateInput && dateInput.value) || selectedDate || calculations.getTodayISODate();
+  }
+
   function formatBedtime(value) {
     return value || "Not logged";
   }
@@ -314,9 +370,11 @@
 
   function populateCheckinForm() {
     const form = byId("checkin-form");
+    const dateInput = byId("checkin-date");
     const selectedLog = getSelectedLog();
+    const deleteButton = byId("delete-entry");
 
-    form.date.value = selectedDate;
+    dateInput.value = selectedDate;
     form.weight.value = selectedLog && selectedLog.weight !== null ? selectedLog.weight : "";
     form.steps.value = selectedLog && selectedLog.steps !== null ? selectedLog.steps : "";
     form.sleepHours.value =
@@ -328,6 +386,15 @@
     form.caloriesOnTarget.checked = selectedLog ? !!selectedLog.caloriesOnTarget : false;
     form.waterTargetMet.checked = selectedLog ? !!selectedLog.waterTargetMet : false;
     form.noSugarIntake.checked = selectedLog ? !!selectedLog.noSugarIntake : false;
+    byId("selected-date-weekday").textContent = formatWeekday(selectedDate);
+    deleteButton.disabled = !selectedLog;
+    deleteButton.setAttribute("aria-disabled", String(!selectedLog));
+  }
+
+  function setSelectedDate(nextDate) {
+    selectedDate = nextDate || calculations.getTodayISODate();
+    populateCheckinForm();
+    renderCheckinPreview();
   }
 
   function renderCheckinPreview() {
@@ -526,16 +593,34 @@
   }
 
   function handleCheckinDateChange(event) {
-    selectedDate = event.currentTarget.value || calculations.getTodayISODate();
-    populateCheckinForm();
-    renderCheckinPreview();
+    setSelectedDate(event.currentTarget.value || calculations.getTodayISODate());
+  }
+
+  function shiftSelectedDate(dayOffset) {
+    setSelectedDate(shiftISODate(getCheckinDateValue(), dayOffset));
   }
 
   function openTodayCheckin() {
-    selectedDate = calculations.getTodayISODate();
     activateTab("checkin");
-    populateCheckinForm();
-    renderCheckinPreview();
+    setSelectedDate(calculations.getTodayISODate());
+  }
+
+  function handleDeleteEntry() {
+    if (!getSelectedLog()) {
+      return;
+    }
+
+    const nextLogs = {
+      ...state.logs,
+    };
+
+    delete nextLogs[selectedDate];
+
+    saveAndRender({
+      ...state,
+      logs: nextLogs,
+    });
+    setFeedback("checkin-feedback", `Deleted entry for ${selectedDate}`);
   }
 
   function handleCheckinSubmit(event) {
@@ -649,7 +734,17 @@
   function bindForms() {
     byId("checkin-form").addEventListener("submit", handleCheckinSubmit);
     byId("goals-form").addEventListener("submit", handleGoalsSubmit);
+    byId("checkin-date").addEventListener("input", handleCheckinDateChange);
     byId("checkin-date").addEventListener("change", handleCheckinDateChange);
+    byId("checkin-prev-day").addEventListener("click", function (event) {
+      event.preventDefault();
+      shiftSelectedDate(-1);
+    });
+    byId("checkin-next-day").addEventListener("click", function (event) {
+      event.preventDefault();
+      shiftSelectedDate(1);
+    });
+    byId("delete-entry").addEventListener("click", handleDeleteEntry);
     byId("export-data").addEventListener("click", handleExport);
     byId("import-data").addEventListener("change", handleImport);
     byId("theme-toggle").addEventListener("click", handleThemeToggle);

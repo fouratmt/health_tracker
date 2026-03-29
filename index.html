@@ -225,11 +225,45 @@
               </div>
 
               <form id="checkin-form" class="form-grid">
+                <div class="checkin-date-panel">
+                  <div class="checkin-date-toolbar">
+                    <button
+                      type="button"
+                      id="checkin-prev-day"
+                      class="ghost-button compact-button"
+                    >
+                      Previous day
+                    </button>
+                    <label class="checkin-date-field" for="checkin-date">
+                      <span>Date</span>
+                      <input type="date" name="date" id="checkin-date" required />
+                    </label>
+                    <button
+                      type="button"
+                      id="checkin-next-day"
+                      class="ghost-button compact-button"
+                    >
+                      Next day
+                    </button>
+                    <div
+                      id="selected-date-weekday"
+                      class="weekday-pill"
+                      aria-live="polite"
+                    >
+                      Monday
+                    </div>
+                  </div>
+                  <div class="checkin-date-footer">
+                    <button
+                      type="button"
+                      id="delete-entry"
+                      class="secondary-button compact-button danger-button"
+                    >
+                      Delete selected entry
+                    </button>
+                  </div>
+                </div>
                 <div class="field-grid">
-                  <label>
-                    <span>Date</span>
-                    <input type="date" name="date" id="checkin-date" required />
-                  </label>
                   <label>
                     <span>Weight (kg)</span>
                     <input type="number" name="weight" step="0.1" min="0" />

@@ -630,6 +630,65 @@ h2 {
   gap: 1rem;
 }
 
+.checkin-date-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--surface-muted) 0%, var(--surface-elevated) 100%);
+}
+
+.checkin-date-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(14rem, 1fr) auto auto;
+  grid-template-areas: "prev field next weekday";
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.checkin-date-toolbar > #checkin-prev-day {
+  grid-area: prev;
+}
+
+.checkin-date-toolbar > .checkin-date-field {
+  grid-area: field;
+}
+
+.checkin-date-toolbar > #checkin-next-day {
+  grid-area: next;
+}
+
+.checkin-date-toolbar > .weekday-pill {
+  grid-area: weekday;
+}
+
+.checkin-date-field {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.weekday-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  border-radius: var(--radius-md);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.checkin-date-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .field-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -722,6 +781,10 @@ h2 {
   padding: 0.85rem 1.1rem;
 }
 
+.compact-button {
+  min-height: 3.25rem;
+}
+
 .primary-button {
   color: white;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
@@ -733,6 +796,19 @@ h2 {
   color: var(--text);
   background: var(--surface-muted);
   border: 1px solid var(--border);
+}
+
+.danger-button {
+  color: var(--status-danger-text);
+  background: var(--danger-soft);
+  border: 1px solid rgba(248, 113, 113, 0.22);
+}
+
+.danger-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .ghost-button {
@@ -884,6 +960,26 @@ h2 {
     grid-template-columns: repeat(2, 1fr);
     border-radius: 24px;
   }
+
+  .checkin-date-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "field field"
+      "prev next"
+      "weekday weekday";
+  }
+
+  .weekday-pill {
+    justify-content: flex-start;
+  }
+
+  .checkin-date-footer {
+    justify-content: stretch;
+  }
+
+  .checkin-date-footer .danger-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 720px) {
@@ -893,6 +989,15 @@ h2 {
   .trend-grid,
   .data-action-grid {
     grid-template-columns: 1fr;
+  }
+
+  .checkin-date-toolbar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "field"
+      "weekday"
+      "prev"
+      "next";
   }
 
   .section-heading-split,
