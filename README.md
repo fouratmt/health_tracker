@@ -4,8 +4,8 @@ Lightweight static browser app for daily health accountability tracking with a l
 
 ## Current Capabilities
 
-- daily check-ins for weight, steps, workouts, calories, hydration, sleep duration, sleep score, and bedtime
-- configurable goals for steps, sleep duration, sleep score, workouts, calorie days, and hydration tracking
+- daily check-ins for weight, steps, workouts, calories, hydration, no sugar, sleep duration, sleep score, and bedtime
+- configurable goals for steps, sleep duration, sleep score, workouts, calorie days, hydration tracking, and optional no-sugar tracking
 - dashboard and progress summaries for adherence, streaks, trend snapshots, slipping metrics, and recent entries
 - light mode by default with a persistent dark-mode toggle
 - local-only persistence with JSON export and import

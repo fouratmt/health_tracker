@@ -69,7 +69,7 @@ Responsibilities:
 - call calculation functions
 - render computed outputs into the DOM
 - handle import and export actions
-- populate and edit per-day logs including sleep hours, sleep score, and bedtime
+- populate and edit per-day logs including sleep duration, sleep score, bedtime, and optional no-sugar tracking
 
 This layer should contain wiring and UI flow logic, not business rules.
 
@@ -87,7 +87,7 @@ Responsibilities:
 - compute adherence percentages
 - compute streaks
 - compute weight trend summary
-- derive `On track`, `Slightly off track`, and `Off track` statuses
+- derive `On track`, `Slightly off track`, and `Off track` statuses from weekly and monthly adherence thresholds
 - include sleep-score evaluation only when a score exists for a log
 
 This layer is the source of truth for business logic and must remain deterministic and side-effect free.
@@ -103,7 +103,7 @@ Responsibilities:
 - read and write application data from browser local storage
 - initialize defaults for first use
 - store versioned JSON
-- normalize imported and legacy data
+- normalize imported and legacy data, including legacy decimal sleep durations
 - persist theme preferences together with the rest of the app state
 - export current data snapshot
 
@@ -143,17 +143,18 @@ Example shape:
 
 ```json
 {
-  "version": 3,
+  "version": 4,
   "preferences": {
     "theme": "light"
   },
   "goals": {
     "stepsMinimum": 8000,
-    "sleepMinimum": 7,
+    "sleepMinimum": "07:00",
     "sleepScoreMinimum": 80,
     "weeklyWorkoutTarget": 4,
     "monthlyCaloriesTarget": 24,
     "waterDaily": true,
+    "noSugarDaily": false,
     "weightTrendDirection": "down"
   },
   "logs": {
@@ -163,10 +164,11 @@ Example shape:
       "workoutDone": true,
       "steps": 7450,
       "caloriesOnTarget": true,
-      "sleepHours": 6.5,
+      "sleepHours": "06:30",
       "sleepScore": 78,
       "bedtime": "23:20",
-      "waterTargetMet": true
+      "waterTargetMet": true,
+      "noSugarIntake": true
     }
   }
 }

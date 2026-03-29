@@ -103,6 +103,7 @@ The app must allow the user to define and update active targets for:
 - sleep minimum
 - sleep score minimum
 - hydration completion
+- no sugar completion
 
 ### FR2. Daily Check-In
 
@@ -113,10 +114,11 @@ The app must provide a daily entry form with the following fields:
 - workout done
 - steps
 - calories on target
-- sleep hours
+- sleep duration (`HH:MM`)
 - sleep score
 - bedtime
 - water target met
+- no sugar intake
 
 The app must allow creating or updating a log for a specific date.
 
@@ -220,9 +222,11 @@ Data should be stored as a versioned JSON document inside browser local storage 
 
 Daily log records should support:
 
-- `sleepHours`: number or `null`
+- `sleepHours`: `HH:MM` string or `null`
 - `sleepScore`: integer from 0 to 100 or `null`
 - `bedtime`: `HH:MM` or `null`
+- `noSugarIntake`: boolean
+- `goals.noSugarDaily`: boolean
 - `preferences.theme`: `"light"` or `"dark"`
 
 ## Calculation Rules
@@ -243,9 +247,10 @@ Monthly adherence is the sum of target hits divided by the sum of applicable tar
 
 ### Sleep Rules
 
-- sleep hours are always evaluated against `sleepMinimum`
+- sleep duration is always evaluated against `sleepMinimum`
 - sleep score is evaluated against `sleepScoreMinimum` only when a score exists for that log
 - bedtime is stored and shown in summaries, but is not yet a scored rule
+- no sugar is evaluated only when `noSugarDaily` is enabled
 
 ### Status Model
 
@@ -255,7 +260,13 @@ The app must use a three-state status model:
 - `Slightly off track`
 - `Off track`
 
-The exact thresholds may be configurable in code, but the model should remain simple and stable.
+Thresholds:
+
+- `On track` when both weekly and monthly adherence are at least 80%
+- `Off track` when both weekly and monthly adherence are below 60%
+- `Slightly off track` otherwise
+
+When there is no current weekly or monthly adherence data yet, the app should default to `Slightly off track` rather than `On track`.
 
 ## UX Requirements
 

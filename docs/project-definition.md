@@ -59,6 +59,7 @@ In scope:
 - workout completed
 - calories on target
 - water target met
+- no sugar intake
 
 Out of scope:
 
@@ -149,10 +150,11 @@ The first version should support these metrics:
 - `workout_done`: boolean
 - `steps`: integer
 - `calories_on_target`: boolean
-- `sleep_hours`: numeric
+- `sleep_hours`: `HH:MM` duration string
 - `sleep_score`: numeric, 0 to 100 when available
 - `bedtime`: `HH:MM` local time for when the user went to bed
 - `water_target_met`: boolean
+- `no_sugar_intake`: boolean
 
 If the MVP needs to be reduced further, bedtime can stay informational before it becomes goal-driven.
 
@@ -183,6 +185,8 @@ Current examples:
 - `sleepScoreMinimum`
 - `weeklyWorkoutTarget`
 - `monthlyCaloriesTarget`
+- `waterDaily`
+- `noSugarDaily`
 
 Bedtime is currently recorded for context and review, not as a scored rule.
 
@@ -226,11 +230,12 @@ The primary flow should be a single daily check-in:
 2. Mark workout done or not
 3. Enter steps
 4. Mark calories target hit or not
-5. Enter sleep hours
+5. Enter sleep duration
 6. Enter sleep score if available
 7. Enter bedtime
 8. Mark water target met or not
-9. View the instant daily summary
+9. Mark no sugar intake or not
+10. View the instant daily summary
 
 ## Screen Structure
 

@@ -23,6 +23,52 @@
     return typeof value === "string" && /^\d{2}:\d{2}$/.test(value) ? value : null;
   }
 
+  function pad(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function formatDurationFromMinutes(totalMinutes) {
+    if (!Number.isFinite(totalMinutes) || totalMinutes < 0) {
+      return null;
+    }
+
+    const roundedMinutes = Math.round(totalMinutes);
+    const hours = Math.floor(roundedMinutes / 60);
+    const minutes = roundedMinutes % 60;
+
+    if (hours > 23) {
+      return null;
+    }
+
+    return `${pad(hours)}:${pad(minutes)}`;
+  }
+
+  function normalizeDuration(value) {
+    if (value === "" || value === null || value === undefined) {
+      return null;
+    }
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return formatDurationFromMinutes(value * 60);
+    }
+
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    const timeMatch = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+
+    if (timeMatch) {
+      const hours = Number(timeMatch[1]);
+      const minutes = Number(timeMatch[2]);
+      return minutes < 60 ? formatDurationFromMinutes(hours * 60 + minutes) : null;
+    }
+
+    const normalizedNumber = Number(trimmed.replace(",", "."));
+    return Number.isFinite(normalizedNumber) ? formatDurationFromMinutes(normalizedNumber * 60) : null;
+  }
+
   function clamp(value, minimum, maximum) {
     return Math.min(Math.max(value, minimum), maximum);
   }
@@ -37,7 +83,7 @@
     return {
       ...DEFAULT_GOALS,
       stepsMinimum: normalizeNumber(source.stepsMinimum) ?? DEFAULT_GOALS.stepsMinimum,
-      sleepMinimum: normalizeNumber(source.sleepMinimum) ?? DEFAULT_GOALS.sleepMinimum,
+      sleepMinimum: normalizeDuration(source.sleepMinimum) ?? DEFAULT_GOALS.sleepMinimum,
       sleepScoreMinimum:
         normalizeNumber(source.sleepScoreMinimum) ?? DEFAULT_GOALS.sleepScoreMinimum,
       weeklyWorkoutTarget:
@@ -46,6 +92,8 @@
         normalizeNumber(source.monthlyCaloriesTarget) ?? DEFAULT_GOALS.monthlyCaloriesTarget,
       waterDaily:
         source.waterDaily === undefined ? DEFAULT_GOALS.waterDaily : normalizeBoolean(source.waterDaily),
+      noSugarDaily:
+        source.noSugarDaily === undefined ? DEFAULT_GOALS.noSugarDaily : normalizeBoolean(source.noSugarDaily),
       weightTrendDirection:
         typeof source.weightTrendDirection === "string"
           ? source.weightTrendDirection
@@ -79,11 +127,12 @@
       workoutDone: normalizeBoolean(source.workoutDone),
       steps: normalizeNumber(source.steps),
       caloriesOnTarget: normalizeBoolean(source.caloriesOnTarget),
-      sleepHours: normalizeNumber(source.sleepHours),
+      sleepHours: normalizeDuration(source.sleepHours),
       sleepScore:
         sleepScore === null ? null : clamp(Math.round(sleepScore), 0, 100),
       bedtime: normalizeTime(source.bedtime),
       waterTargetMet: normalizeBoolean(source.waterTargetMet),
+      noSugarIntake: normalizeBoolean(source.noSugarIntake),
     };
   }
 

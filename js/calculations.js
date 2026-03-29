@@ -38,6 +38,53 @@
     });
   }
 
+  function parseDurationToMinutes(value) {
+    if (value === "" || value === null || value === undefined) {
+      return null;
+    }
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return Math.round(value * 60);
+    }
+
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    const timeMatch = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+
+    if (timeMatch) {
+      const hours = Number(timeMatch[1]);
+      const minutes = Number(timeMatch[2]);
+
+      if (minutes >= 60) {
+        return null;
+      }
+
+      return (hours * 60) + minutes;
+    }
+
+    const normalizedNumber = Number(trimmed.replace(",", "."));
+    return Number.isFinite(normalizedNumber) ? Math.round(normalizedNumber * 60) : null;
+  }
+
+  function formatDurationFromMinutes(totalMinutes) {
+    if (!Number.isFinite(totalMinutes) || totalMinutes < 0) {
+      return null;
+    }
+
+    const roundedMinutes = Math.round(totalMinutes);
+    const hours = Math.floor(roundedMinutes / 60);
+    const minutes = roundedMinutes % 60;
+    return `${pad(hours)}:${pad(minutes)}`;
+  }
+
+  function formatDurationValue(value) {
+    const totalMinutes = parseDurationToMinutes(value);
+    return totalMinutes === null ? null : formatDurationFromMinutes(totalMinutes);
+  }
+
   function evaluateDailyLog(log, goals, logs) {
     if (!log) {
       return {
@@ -54,6 +101,8 @@
     const caloriesHitsThisMonth = monthlyLogs.filter(function (entry) {
       return !!entry.caloriesOnTarget;
     }).length;
+    const sleepMinutes = parseDurationToMinutes(log.sleepHours);
+    const sleepMinimumMinutes = parseDurationToMinutes(goals.sleepMinimum) || 0;
 
     const rules = [
       {
@@ -77,8 +126,8 @@
       {
         key: "sleepHours",
         label: "Sleep",
-        hit: Number(log.sleepHours || 0) >= Number(goals.sleepMinimum || 0),
-        detail: `${Number(log.sleepHours || 0)} / ${Number(goals.sleepMinimum || 0)} h`,
+        hit: sleepMinutes !== null && sleepMinutes >= sleepMinimumMinutes,
+        detail: `${formatDurationValue(log.sleepHours) || "Not logged"} / ${formatDurationValue(goals.sleepMinimum) || "00:00"}`,
       },
     ];
 
@@ -97,6 +146,15 @@
         label: "Water",
         hit: !!log.waterTargetMet,
         detail: log.waterTargetMet ? "met" : "missed",
+      });
+    }
+
+    if (goals.noSugarDaily) {
+      rules.push({
+        key: "noSugarIntake",
+        label: "No sugar",
+        hit: !!log.noSugarIntake,
+        detail: log.noSugarIntake ? "avoided" : "consumed",
       });
     }
 
@@ -230,19 +288,19 @@
   }
 
   function deriveOverallStatus(todayEvaluation, weeklyAdherence, monthlyAdherence) {
-    if (weeklyAdherence.percentage >= 80 && monthlyAdherence.percentage >= 75) {
-      return "On track";
-    }
-
-    if (weeklyAdherence.percentage >= 60 || monthlyAdherence.percentage >= 60) {
+    if (weeklyAdherence.total === 0 && monthlyAdherence.total === 0) {
       return "Slightly off track";
     }
 
-    if (todayEvaluation.total === 0) {
+    if (weeklyAdherence.percentage >= 80 && monthlyAdherence.percentage >= 80) {
       return "On track";
     }
 
-    return "Off track";
+    if (weeklyAdherence.percentage < 60 && monthlyAdherence.percentage < 60) {
+      return "Off track";
+    }
+
+    return "Slightly off track";
   }
 
   function buildSummary(state) {
@@ -299,6 +357,9 @@
   window.HealthTrackerCalculations = {
     buildSummary,
     evaluateDailyLog,
+    formatDurationFromMinutes,
+    formatDurationValue,
     getTodayISODate,
+    parseDurationToMinutes,
   };
 })();

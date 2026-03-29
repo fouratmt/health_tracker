@@ -30,6 +30,10 @@
     return /^\d{2}:\d{2}$/.test(value || "") ? value : null;
   }
 
+  function normalizeDuration(value) {
+    return calculations.formatDurationValue(value);
+  }
+
   function applyTheme(theme) {
     const resolvedTheme = theme === "dark" ? "dark" : "light";
     const toggleButton = byId("theme-toggle");
@@ -171,9 +175,10 @@
 
   function formatSleepSnapshot(entry) {
     const parts = [];
+    const sleepDuration = calculations.formatDurationValue(entry.sleepHours);
 
-    if (typeof entry.sleepHours === "number") {
-      parts.push(`${entry.sleepHours} h sleep`);
+    if (sleepDuration) {
+      parts.push(`${sleepDuration} sleep`);
     } else {
       parts.push("No sleep duration");
     }
@@ -204,6 +209,7 @@
     form.workoutDone.checked = selectedLog ? !!selectedLog.workoutDone : false;
     form.caloriesOnTarget.checked = selectedLog ? !!selectedLog.caloriesOnTarget : false;
     form.waterTargetMet.checked = selectedLog ? !!selectedLog.waterTargetMet : false;
+    form.noSugarIntake.checked = selectedLog ? !!selectedLog.noSugarIntake : false;
   }
 
   function renderCheckinPreview() {
@@ -257,10 +263,10 @@
       });
     const sleepValues = recentEntries
       .map(function (entry) {
-        return Number(entry.sleepHours || 0);
+        return calculations.parseDurationToMinutes(entry.sleepHours);
       })
       .filter(function (value) {
-        return value > 0;
+        return value !== null && value > 0;
       });
     const sleepScoreValues = recentEntries
       .map(function (entry) {
@@ -350,7 +356,7 @@
       },
       {
         title: "Sleep minimum",
-        detail: `${state.goals.sleepMinimum} h / ${state.goals.sleepScoreMinimum}+ score`,
+        detail: `${calculations.formatDurationValue(state.goals.sleepMinimum) || "00:00"} / ${state.goals.sleepScoreMinimum}+ score`,
       },
     ], "No pacing data");
 
@@ -378,7 +384,10 @@
         },
         {
           title: "Average sleep",
-          detail: averageSleep !== null ? `${averageSleep.toFixed(1)} hours` : "No data",
+          detail:
+            averageSleep !== null
+              ? calculations.formatDurationFromMinutes(averageSleep)
+              : "No data",
         },
         {
           title: "Average sleep score",
@@ -434,6 +443,10 @@
           title: "Water tracking",
           detail: state.goals.waterDaily ? "Enabled daily" : "Disabled",
         },
+        {
+          title: "No sugar tracking",
+          detail: state.goals.noSugarDaily ? "Enabled daily" : "Disabled",
+        },
       ],
       "No consistency data"
     );
@@ -448,6 +461,7 @@
     goalsForm.weeklyWorkoutTarget.value = state.goals.weeklyWorkoutTarget;
     goalsForm.monthlyCaloriesTarget.value = state.goals.monthlyCaloriesTarget;
     goalsForm.waterDaily.checked = !!state.goals.waterDaily;
+    goalsForm.noSugarDaily.checked = !!state.goals.noSugarDaily;
   }
 
   function handleThemeToggle() {
@@ -478,10 +492,11 @@
       workoutDone: form.workoutDone.checked,
       steps: normalizeNumber(form.steps.value),
       caloriesOnTarget: form.caloriesOnTarget.checked,
-      sleepHours: normalizeNumber(form.sleepHours.value),
+      sleepHours: normalizeDuration(form.sleepHours.value),
       sleepScore: normalizeNumber(form.sleepScore.value),
       bedtime: normalizeTime(form.bedtime.value),
       waterTargetMet: form.waterTargetMet.checked,
+      noSugarIntake: form.noSugarIntake.checked,
     };
 
     selectedDate = payload.date;
@@ -507,11 +522,12 @@
       goals: {
         ...state.goals,
         stepsMinimum: normalizeNumber(form.stepsMinimum.value) || 0,
-        sleepMinimum: normalizeNumber(form.sleepMinimum.value) || 0,
+        sleepMinimum: normalizeDuration(form.sleepMinimum.value) || "00:00",
         sleepScoreMinimum: normalizeNumber(form.sleepScoreMinimum.value) || 0,
         weeklyWorkoutTarget: normalizeNumber(form.weeklyWorkoutTarget.value) || 0,
         monthlyCaloriesTarget: normalizeNumber(form.monthlyCaloriesTarget.value) || 0,
         waterDaily: form.waterDaily.checked,
+        noSugarDaily: form.noSugarDaily.checked,
       },
     };
 

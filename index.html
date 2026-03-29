@@ -235,8 +235,8 @@
                     <input type="number" name="steps" step="1" min="0" />
                   </label>
                   <label>
-                    <span>Sleep hours</span>
-                    <input type="number" name="sleepHours" step="0.1" min="0" />
+                    <span>Sleep duration</span>
+                    <input type="time" name="sleepHours" step="60" />
                   </label>
                   <label>
                     <span>Sleep score</span>
@@ -266,6 +266,10 @@
                   <label class="toggle-field">
                     <span>Water target met</span>
                     <input type="checkbox" name="waterTargetMet" />
+                  </label>
+                  <label class="toggle-field">
+                    <span>No sugar intake</span>
+                    <input type="checkbox" name="noSugarIntake" />
                   </label>
                 </div>
 
@@ -346,8 +350,8 @@
                   <input type="number" name="stepsMinimum" step="1" min="0" />
                 </label>
                 <label>
-                  <span>Sleep minimum (hours)</span>
-                  <input type="number" name="sleepMinimum" step="0.1" min="0" />
+                  <span>Sleep minimum (HH:MM)</span>
+                  <input type="time" name="sleepMinimum" step="60" />
                 </label>
                 <label>
                   <span>Sleep score minimum</span>
@@ -381,6 +385,10 @@
                 <label class="toggle-field">
                   <span>Track water as a daily target</span>
                   <input type="checkbox" name="waterDaily" />
+                </label>
+                <label class="toggle-field">
+                  <span>Track no sugar as a daily target</span>
+                  <input type="checkbox" name="noSugarDaily" />
                 </label>
                 <div class="form-actions">
                   <button type="submit" class="primary-button">
