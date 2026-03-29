@@ -122,92 +122,99 @@
 
       <main class="main-stack">
         <section id="tab-dashboard" class="tab-panel is-active">
-          <div class="card-grid stat-grid">
-            <article class="card metric-card accent-card">
-              <p class="label">Today&apos;s score</p>
-              <strong id="today-score">0 / 0</strong>
-              <span id="today-date" class="muted">No day selected</span>
-            </article>
+          <div class="dashboard-stack">
+            <div class="card-grid stat-grid">
+              <article class="card metric-card accent-card">
+                <p class="label">Today&apos;s score</p>
+                <strong id="today-score">0 / 0</strong>
+                <span id="today-date" class="muted">No day selected</span>
+              </article>
 
-            <article class="card metric-card">
-              <p class="label">This week</p>
-              <strong id="weekly-adherence">0%</strong>
-              <span id="weekly-detail" class="muted"></span>
-            </article>
+              <article class="card metric-card">
+                <p class="label">This week</p>
+                <strong id="weekly-adherence">0%</strong>
+                <span id="weekly-detail" class="muted"></span>
+              </article>
 
-            <article class="card metric-card">
-              <p class="label">This month</p>
-              <strong id="monthly-adherence">0%</strong>
-              <span id="monthly-detail" class="muted"></span>
-            </article>
+              <article class="card metric-card">
+                <p class="label">This month</p>
+                <strong id="monthly-adherence">0%</strong>
+                <span id="monthly-detail" class="muted"></span>
+              </article>
 
-            <article class="card metric-card">
-              <p class="label">Workout streak</p>
-              <strong id="workout-streak">0 days</strong>
-              <span id="workout-detail" class="muted">
-                Consecutive completed workout days
-              </span>
-            </article>
+              <article class="card metric-card">
+                <p class="label">Workout streak</p>
+                <strong id="workout-streak">0 days</strong>
+                <span id="workout-detail" class="muted">
+                  Consecutive completed workout days
+                </span>
+              </article>
 
-            <article class="card metric-card">
-              <p class="label">Logged days</p>
-              <strong id="logged-days-card">0</strong>
-              <span class="muted">Saved daily check-ins</span>
-            </article>
+              <article class="card metric-card">
+                <p class="label">Logged days</p>
+                <strong id="logged-days-card">0</strong>
+                <span class="muted">Saved daily check-ins</span>
+              </article>
 
-            <article class="card metric-card">
-              <p class="label">Weight trend</p>
-              <strong id="weight-trend-label">Flat</strong>
-              <span id="weight-trend-note" class="muted">Need more data</span>
-            </article>
-          </div>
+              <article class="card metric-card">
+                <p class="label">Weight trend</p>
+                <strong id="weight-trend-label">Flat</strong>
+                <span id="weight-trend-note" class="muted">Need more data</span>
+              </article>
+            </div>
 
-          <div class="dashboard-grid">
-            <article class="card surface-card">
-              <div class="section-heading">
-                <h2>Today at a glance</h2>
-                <p class="muted">
-                  A quick read of the current day&apos;s hits and misses.
+            <div
+              id="dashboard-marker-groups"
+              class="marker-group-grid dashboard-marker-grid"
+            ></div>
+
+            <div class="dashboard-grid">
+              <article class="card surface-card">
+                <div class="section-heading">
+                  <h2>Today at a glance</h2>
+                  <p class="muted">
+                    A quick read of the current day&apos;s hits and misses.
+                  </p>
+                </div>
+                <ul id="today-breakdown" class="summary-list breakdown-list"></ul>
+              </article>
+
+              <article class="card surface-card">
+                <div class="section-heading">
+                  <h2>Attention area</h2>
+                  <p class="muted">
+                    The weakest signals across recent check-ins.
+                  </p>
+                </div>
+                <ul id="slipping-metrics" class="summary-list focus-list"></ul>
+                <p id="focus-summary" class="inline-note muted">
+                  No trend signal yet.
                 </p>
-              </div>
-              <ul id="today-breakdown" class="summary-list breakdown-list"></ul>
-            </article>
+              </article>
+            </div>
 
-            <article class="card surface-card">
-              <div class="section-heading">
-                <h2>Attention area</h2>
-                <p class="muted">
-                  The weakest signals across recent check-ins.
-                </p>
-              </div>
-              <ul id="slipping-metrics" class="summary-list focus-list"></ul>
-              <p id="focus-summary" class="inline-note muted">
-                No trend signal yet.
-              </p>
-            </article>
-          </div>
+            <div class="two-column lower-dashboard-grid">
+              <article class="card">
+                <div class="section-heading">
+                  <h2>Goal pacing</h2>
+                  <p class="muted">
+                    Progress against the most important weekly and monthly rules.
+                  </p>
+                </div>
+                <ul id="weekly-goal-board" class="summary-list compact-list"></ul>
+              </article>
 
-          <div class="two-column lower-dashboard-grid">
-            <article class="card">
-              <div class="section-heading">
-                <h2>Goal pacing</h2>
-                <p class="muted">
-                  Progress against the most important weekly and monthly rules.
-                </p>
-              </div>
-              <ul id="weekly-goal-board" class="summary-list compact-list"></ul>
-            </article>
-
-            <article class="card">
-              <div class="section-heading">
-                <h2>Latest entries</h2>
-                <p class="muted">Recent check-ins for quick review.</p>
-              </div>
-              <ul
-                id="dashboard-recent-entries"
-                class="summary-list compact-list"
-              ></ul>
-            </article>
+              <article class="card">
+                <div class="section-heading">
+                  <h2>Latest entries</h2>
+                  <p class="muted">Recent check-ins for quick review.</p>
+                </div>
+                <ul
+                  id="dashboard-recent-entries"
+                  class="summary-list compact-list"
+                ></ul>
+              </article>
+            </div>
           </div>
         </section>
 
@@ -263,52 +270,78 @@
                     </button>
                   </div>
                 </div>
-                <div class="field-grid">
-                  <label>
-                    <span>Weight (kg)</span>
-                    <input type="number" name="weight" step="0.1" min="0" />
-                  </label>
-                  <label>
-                    <span>Steps</span>
-                    <input type="number" name="steps" step="1" min="0" />
-                  </label>
-                  <label>
-                    <span>Sleep duration</span>
-                    <input type="time" name="sleepHours" step="60" />
-                  </label>
-                  <label>
-                    <span>Sleep score</span>
-                    <input
-                      type="number"
-                      name="sleepScore"
-                      step="1"
-                      min="0"
-                      max="100"
-                    />
-                  </label>
-                  <label>
-                    <span>Went to bed</span>
-                    <input type="time" name="bedtime" />
-                  </label>
-                </div>
+                <div class="marker-group-grid">
+                  <section class="marker-panel marker-panel-sleep">
+                    <div class="marker-panel-head">
+                      <p class="label">Sleep</p>
+                      <strong>Recovery markers</strong>
+                      <span class="muted">Duration, quality, and bedtime.</span>
+                    </div>
+                    <div class="marker-panel-fields">
+                      <label>
+                        <span>Sleep duration</span>
+                        <input type="time" name="sleepHours" step="60" />
+                      </label>
+                      <label>
+                        <span>Sleep score</span>
+                        <input
+                          type="number"
+                          name="sleepScore"
+                          step="1"
+                          min="0"
+                          max="100"
+                        />
+                      </label>
+                      <label>
+                        <span>Went to bed</span>
+                        <input type="time" name="bedtime" />
+                      </label>
+                    </div>
+                  </section>
 
-                <div class="toggle-grid">
-                  <label class="toggle-field">
-                    <span>Workout done</span>
-                    <input type="checkbox" name="workoutDone" />
-                  </label>
-                  <label class="toggle-field">
-                    <span>Calories on target</span>
-                    <input type="checkbox" name="caloriesOnTarget" />
-                  </label>
-                  <label class="toggle-field">
-                    <span>Water target met (~2 L)</span>
-                    <input type="checkbox" name="waterTargetMet" />
-                  </label>
-                  <label class="toggle-field">
-                    <span>No sugar intake</span>
-                    <input type="checkbox" name="noSugarIntake" />
-                  </label>
+                  <section class="marker-panel marker-panel-eat">
+                    <div class="marker-panel-head">
+                      <p class="label">Eat</p>
+                      <strong>Nutrition markers</strong>
+                      <span class="muted">Calories, hydration, and sugar control.</span>
+                    </div>
+                    <div class="marker-panel-fields">
+                      <label class="toggle-field">
+                        <span>Calories on target</span>
+                        <input type="checkbox" name="caloriesOnTarget" />
+                      </label>
+                      <label class="toggle-field">
+                        <span>Water target met (~2 L)</span>
+                        <input type="checkbox" name="waterTargetMet" />
+                      </label>
+                      <label class="toggle-field">
+                        <span>No sugar intake</span>
+                        <input type="checkbox" name="noSugarIntake" />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section class="marker-panel marker-panel-move">
+                    <div class="marker-panel-head">
+                      <p class="label">Move</p>
+                      <strong>Activity markers</strong>
+                      <span class="muted">Body weight, steps, and workouts.</span>
+                    </div>
+                    <div class="marker-panel-fields">
+                      <label>
+                        <span>Weight (kg)</span>
+                        <input type="number" name="weight" step="0.1" min="0" />
+                      </label>
+                      <label>
+                        <span>Steps</span>
+                        <input type="number" name="steps" step="1" min="0" />
+                      </label>
+                      <label class="toggle-field">
+                        <span>Workout done</span>
+                        <input type="checkbox" name="workoutDone" />
+                      </label>
+                    </div>
+                  </section>
                 </div>
 
                 <div class="form-actions form-actions-inline">
@@ -384,51 +417,82 @@
                 <p class="muted">Keep the rules simple and stable.</p>
               </div>
               <form id="goals-form" class="form-grid">
-                <label>
-                  <span>Daily steps minimum</span>
-                  <input type="number" name="stepsMinimum" step="1" min="0" />
-                </label>
-                <label>
-                  <span>Sleep minimum (HH:MM)</span>
-                  <input type="time" name="sleepMinimum" step="60" />
-                </label>
-                <label>
-                  <span>Sleep score minimum</span>
-                  <input
-                    type="number"
-                    name="sleepScoreMinimum"
-                    step="1"
-                    min="0"
-                    max="100"
-                  />
-                </label>
-                <label>
-                  <span>Weekly workout target</span>
-                  <input
-                    type="number"
-                    name="weeklyWorkoutTarget"
-                    step="1"
-                    min="0"
-                  />
-                </label>
-                <label>
-                  <span>Monthly calories target days</span>
-                  <input
-                    type="number"
-                    name="monthlyCaloriesTarget"
-                    step="1"
-                    min="0"
-                    max="31"
-                  />
-                </label>
-                <div class="rule-note">
-                  <p class="label">Always-on daily rules</p>
-                  <strong>Water and no sugar are always part of the score.</strong>
-                  <span class="muted">
-                    Count water as a hit when you reach around 2 liters for the
-                    day. No sugar is tracked every day without a separate goal
-                    toggle.
-                  </span>
+                <div class="marker-group-grid marker-group-grid-goals">
+                  <section class="marker-panel marker-panel-sleep">
+                    <div class="marker-panel-head">
+                      <p class="label">Sleep</p>
+                      <strong>Recovery goals</strong>
+                      <span class="muted">Minimum duration and score target.</span>
+                    </div>
+                    <div class="marker-panel-fields">
+                      <label>
+                        <span>Sleep minimum (HH:MM)</span>
+                        <input type="time" name="sleepMinimum" step="60" />
+                      </label>
+                      <label>
+                        <span>Sleep score minimum</span>
+                        <input
+                          type="number"
+                          name="sleepScoreMinimum"
+                          step="1"
+                          min="0"
+                          max="100"
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section class="marker-panel marker-panel-eat">
+                    <div class="marker-panel-head">
+                      <p class="label">Eat</p>
+                      <strong>Nutrition goals</strong>
+                      <span class="muted">Monthly calorie pace and fixed daily rules.</span>
+                    </div>
+                    <div class="marker-panel-fields">
+                      <label>
+                        <span>Monthly calories target days</span>
+                        <input
+                          type="number"
+                          name="monthlyCaloriesTarget"
+                          step="1"
+                          min="0"
+                          max="31"
+                        />
+                      </label>
+                      <div class="rule-note">
+                        <p class="label">Always-on daily rules</p>
+                        <strong>Water and no sugar are always part of the score.</strong>
+                        <span class="muted">
+                          Count water as a hit when you reach around 2 liters for the
+                          day. No sugar is tracked every day without a separate goal
+                          toggle.
+                        </span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="marker-panel marker-panel-move">
+                    <div class="marker-panel-head">
+                      <p class="label">Move</p>
+                      <strong>Activity goals</strong>
+                      <span class="muted">Daily step floor and weekly workout pace.</span>
+                    </div>
+                    <div class="marker-panel-fields">
+                      <label>
+                        <span>Daily steps minimum</span>
+                        <input type="number" name="stepsMinimum" step="1" min="0" />
+                      </label>
+                      <label>
+                        <span>Weekly workout target</span>
+                        <input
+                          type="number"
+                          name="weeklyWorkoutTarget"
+                          step="1"
+                          min="0"
+                        />
+                      </label>
+                    </div>
+                  </section>
                 </div>
                 <div class="form-actions">
                   <button type="submit" class="primary-button">

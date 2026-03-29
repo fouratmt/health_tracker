@@ -1,6 +1,7 @@
 (function () {
   const storage = window.HealthTrackerStorage;
   const calculations = window.HealthTrackerCalculations;
+  const MARKER_GROUP_ORDER = ["Sleep", "Eat", "Move"];
 
   let state = storage.loadState();
   let selectedDate = calculations.getTodayISODate();
@@ -168,11 +169,205 @@
     element.className = `${baseClassName} ${toneClassName}`;
   }
 
+  function shouldRenderGrouped(items) {
+    return items.length > 0 && items.every(function (item) {
+      return typeof item.group === "string" && item.group.length > 0;
+    });
+  }
+
+  function groupSortIndex(group) {
+    const index = MARKER_GROUP_ORDER.indexOf(group);
+    return index === -1 ? MARKER_GROUP_ORDER.length : index;
+  }
+
+  function buildGroupedListMarkup(items, renderItem) {
+    const groupedItems = items.reduce(function (groups, item) {
+      const group = item.group;
+
+      if (!groups[group]) {
+        groups[group] = [];
+      }
+
+      groups[group].push(item);
+      return groups;
+    }, {});
+
+    return Object.keys(groupedItems)
+      .sort(function (left, right) {
+        return groupSortIndex(left) - groupSortIndex(right);
+      })
+      .map(function (group) {
+        return `
+          <li class="summary-group-row">
+            <div class="summary-group-head">
+              <span class="summary-group-pill summary-group-pill-${group.toLowerCase()}">${group}</span>
+            </div>
+          </li>
+          ${groupedItems[group].map(renderItem).join("")}
+        `;
+      })
+      .join("");
+  }
+
+  function summarizeEvaluationGroups(results) {
+    return MARKER_GROUP_ORDER.reduce(function (groups, group) {
+      groups[group] = {
+        group,
+        hits: 0,
+        total: 0,
+        results: [],
+      };
+      return groups;
+    }, {});
+  }
+
+  function collectEvaluationGroups(results) {
+    const groups = summarizeEvaluationGroups(results);
+
+    results.forEach(function (result) {
+      const group = result.group || calculations.getMetricGroup(result.key);
+
+      if (!groups[group]) {
+        groups[group] = {
+          group,
+          hits: 0,
+          total: 0,
+          results: [],
+        };
+      }
+
+      groups[group].results.push(result);
+      groups[group].total += 1;
+      groups[group].hits += result.hit ? 1 : 0;
+    });
+
+    return groups;
+  }
+
+  function formatGroupScore(groupSummary, hasLog) {
+    if (!hasLog || groupSummary.total === 0) {
+      return "No entry";
+    }
+
+    return `${groupSummary.hits} / ${groupSummary.total}`;
+  }
+
+  function buildDashboardGroupCards(summary) {
+    const todayGroups = collectEvaluationGroups(summary.todayEvaluation.results);
+    const hasTodayLog = !!summary.todayLog;
+    const sleepFocus = summary.slippingMetrics.find(function (metric) {
+      return metric.group === "Sleep";
+    });
+
+    return [
+      {
+        group: "Sleep",
+        title: "Recovery markers",
+        value: formatGroupScore(todayGroups.Sleep, hasTodayLog),
+        caption: hasTodayLog ? "Hit today" : "Awaiting today",
+        note: hasTodayLog
+          ? formatSleepSnapshot(summary.todayLog)
+          : "Log duration and score to evaluate recovery.",
+        items: [
+          {
+            title: "Target",
+            detail: `${calculations.formatDurationValue(state.goals.sleepMinimum) || "00:00"} / ${state.goals.sleepScoreMinimum}+ score`,
+          },
+          {
+            title: "Recent focus",
+            detail: sleepFocus ? `${sleepFocus.label} is slipping` : "Sleep markers look stable",
+          },
+        ],
+      },
+      {
+        group: "Eat",
+        title: "Nutrition markers",
+        value: formatGroupScore(todayGroups.Eat, hasTodayLog),
+        caption: hasTodayLog ? "Hit today" : "Awaiting today",
+        note: hasTodayLog
+          ? todayGroups.Eat.results.map(function (result) {
+              return `${result.label}: ${result.hit ? "hit" : "miss"}`;
+            }).join(" / ")
+          : "Calories, water, and no sugar are waiting for today's check-in.",
+        items: [
+          {
+            title: "Calories month",
+            detail: `${summary.monthlyCaloriesHits} / ${state.goals.monthlyCaloriesTarget}`,
+          },
+          {
+            title: "Daily rule",
+            detail: "Water around 2 L and no sugar are always scored",
+          },
+        ],
+      },
+      {
+        group: "Move",
+        title: "Activity markers",
+        value: formatGroupScore(todayGroups.Move, hasTodayLog),
+        caption: hasTodayLog ? "Hit today" : "Awaiting today",
+        note: hasTodayLog
+          ? todayGroups.Move.results.map(function (result) {
+              return `${result.label}: ${result.hit ? "hit" : "miss"}`;
+            }).join(" / ")
+          : "Weight, steps, and workouts are waiting for today's check-in.",
+        items: [
+          {
+            title: "Workout pace",
+            detail: `${summary.weeklyWorkoutCount} / ${state.goals.weeklyWorkoutTarget} this week`,
+          },
+          {
+            title: "Steps floor",
+            detail: `${state.goals.stepsMinimum}+ daily`,
+          },
+          {
+            title: "Weight trend",
+            detail: summary.weightTrend.detail,
+          },
+        ],
+      },
+    ];
+  }
+
+  function renderDashboardGroupCards(summary) {
+    const element = byId("dashboard-marker-groups");
+    const cards = buildDashboardGroupCards(summary);
+
+    element.innerHTML = cards
+      .map(function (card) {
+        return `
+          <article class="card marker-panel marker-panel-${card.group.toLowerCase()} dashboard-group-card">
+            <div class="marker-panel-head">
+              <p class="label">${card.group}</p>
+              <strong>${card.title}</strong>
+              <span class="muted">${card.note}</span>
+            </div>
+            <div class="dashboard-group-score">
+              <strong>${card.value}</strong>
+              <span class="muted">${card.caption}</span>
+            </div>
+            <ul class="summary-list compact-list dashboard-group-list">
+              ${card.items.map(function (item) {
+                return `<li><strong>${item.title}</strong><span>${item.detail}</span></li>`;
+              }).join("")}
+            </ul>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
   function renderCompactList(elementId, items, emptyText) {
     const element = byId(elementId);
 
     if (!items.length) {
       element.innerHTML = `<li><strong>${emptyText}</strong><span></span></li>`;
+      return;
+    }
+
+    if (shouldRenderGrouped(items)) {
+      element.innerHTML = buildGroupedListMarkup(items, function (item) {
+        return `<li><strong>${item.title}</strong><span>${item.detail}</span></li>`;
+      });
       return;
     }
 
@@ -188,6 +383,21 @@
 
     if (!items.length) {
       element.innerHTML = `<li><div class="list-row-head"><strong>${emptyText}</strong><span class="list-badge muted-chip">No data</span></div><span></span></li>`;
+      return;
+    }
+
+    if (shouldRenderGrouped(items)) {
+      element.innerHTML = buildGroupedListMarkup(items, function (item) {
+        return `
+          <li>
+            <div class="list-row-head">
+              <strong>${item.title}</strong>
+              <span class="list-badge ${item.toneClass}">${item.badge}</span>
+            </div>
+            <span>${item.detail}</span>
+          </li>
+        `;
+      });
       return;
     }
 
@@ -423,6 +633,7 @@
           detail: result.detail,
           badge: result.hit ? "Hit" : "Miss",
           toneClass: result.hit ? "status-on-track" : "status-off-track",
+          group: result.group,
         };
       }),
       "No saved entry"
@@ -464,6 +675,7 @@
     byId("weight-trend-label").textContent =
       summary.weightTrend.direction.charAt(0).toUpperCase() + summary.weightTrend.direction.slice(1);
     byId("weight-trend-note").textContent = summary.weightTrend.detail;
+    renderDashboardGroupCards(summary);
 
     renderBreakdownList(
       "today-breakdown",
@@ -473,6 +685,7 @@
           detail: result.detail,
           badge: result.hit ? "Hit" : "Miss",
           toneClass: result.hit ? "status-on-track" : "status-off-track",
+          group: result.group,
         };
       }),
       "No entry for today"
@@ -486,6 +699,7 @@
           detail: `${metric.percentage}% over the last 14 logged days`,
           badge: metric.percentage < 60 ? "Attention" : "Watch",
           toneClass: metric.percentage < 60 ? "status-off-track" : "status-slightly-off-track",
+          group: metric.group,
         };
       }),
       "Not enough history"
@@ -497,16 +711,19 @@
 
     renderCompactList("weekly-goal-board", [
       {
-        title: "Workouts this week",
-        detail: `${summary.weeklyWorkoutCount} / ${state.goals.weeklyWorkoutTarget}`,
+        group: calculations.getMetricGroup("sleepHours"),
+        title: "Sleep minimum",
+        detail: `${calculations.formatDurationValue(state.goals.sleepMinimum) || "00:00"} / ${state.goals.sleepScoreMinimum}+ score`,
       },
       {
+        group: calculations.getMetricGroup("caloriesOnTarget"),
         title: "Calorie target days this month",
         detail: `${summary.monthlyCaloriesHits} / ${state.goals.monthlyCaloriesTarget}`,
       },
       {
-        title: "Sleep minimum",
-        detail: `${calculations.formatDurationValue(state.goals.sleepMinimum) || "00:00"} / ${state.goals.sleepScoreMinimum}+ score`,
+        group: calculations.getMetricGroup("workoutDone"),
+        title: "Workouts this week",
+        detail: `${summary.weeklyWorkoutCount} / ${state.goals.weeklyWorkoutTarget}`,
       },
     ], "No pacing data");
 

@@ -1,4 +1,16 @@
 (function () {
+  function getMetricGroup(key) {
+    if (key === "sleepHours" || key === "sleepScore") {
+      return "Sleep";
+    }
+
+    if (key === "caloriesOnTarget" || key === "waterTargetMet" || key === "noSugarIntake") {
+      return "Eat";
+    }
+
+    return "Move";
+  }
+
   function pad(value) {
     return String(value).padStart(2, "0");
   }
@@ -107,24 +119,28 @@
     const rules = [
       {
         key: "workoutDone",
+        group: getMetricGroup("workoutDone"),
         label: "Workout",
         hit: !!log.workoutDone,
         detail: log.workoutDone ? "done" : "missed",
       },
       {
         key: "steps",
+        group: getMetricGroup("steps"),
         label: "Steps",
         hit: Number(log.steps || 0) >= Number(goals.stepsMinimum || 0),
         detail: `${Number(log.steps || 0)} / ${Number(goals.stepsMinimum || 0)}`,
       },
       {
         key: "caloriesOnTarget",
+        group: getMetricGroup("caloriesOnTarget"),
         label: "Calories",
         hit: !!log.caloriesOnTarget,
         detail: `${caloriesHitsThisMonth} monthly hit days`,
       },
       {
         key: "sleepHours",
+        group: getMetricGroup("sleepHours"),
         label: "Sleep",
         hit: sleepMinutes !== null && sleepMinutes >= sleepMinimumMinutes,
         detail: `${formatDurationValue(log.sleepHours) || "Not logged"} / ${formatDurationValue(goals.sleepMinimum) || "00:00"}`,
@@ -134,6 +150,7 @@
     if (typeof log.sleepScore === "number" && !Number.isNaN(log.sleepScore)) {
       rules.push({
         key: "sleepScore",
+        group: getMetricGroup("sleepScore"),
         label: "Sleep score",
         hit: Number(log.sleepScore || 0) >= Number(goals.sleepScoreMinimum || 0),
         detail: `${Number(log.sleepScore || 0)} / ${Number(goals.sleepScoreMinimum || 0)}`,
@@ -142,6 +159,7 @@
 
     rules.push({
       key: "waterTargetMet",
+      group: getMetricGroup("waterTargetMet"),
       label: "Water",
       hit: !!log.waterTargetMet,
       detail: log.waterTargetMet ? "around 2 L reached" : "below the ~2 L target",
@@ -149,6 +167,7 @@
 
     rules.push({
       key: "noSugarIntake",
+      group: getMetricGroup("noSugarIntake"),
       label: "No sugar",
       hit: !!log.noSugarIntake,
       detail: log.noSugarIntake ? "no sugar logged" : "sugar logged",
@@ -324,21 +343,28 @@
     entries.forEach(function (entry) {
       const evaluation = evaluateDailyLog(entry, goals, logs);
       evaluation.results.forEach(function (result) {
-        if (!counters[result.label]) {
-          counters[result.label] = { hits: 0, total: 0 };
+        if (!counters[result.key]) {
+          counters[result.key] = {
+            label: result.label,
+            group: result.group,
+            hits: 0,
+            total: 0,
+          };
         }
 
-        counters[result.label].hits += result.hit ? 1 : 0;
-        counters[result.label].total += 1;
+        counters[result.key].hits += result.hit ? 1 : 0;
+        counters[result.key].total += 1;
       });
     });
 
     return Object.keys(counters)
-      .map(function (label) {
-        const item = counters[label];
+      .map(function (key) {
+        const item = counters[key];
         const percentage = item.total === 0 ? 0 : Math.round((item.hits / item.total) * 100);
         return {
-          label,
+          key,
+          label: item.label,
+          group: item.group,
           percentage,
         };
       })
@@ -446,6 +472,7 @@
     evaluateDailyLog,
     formatDurationFromMinutes,
     formatDurationValue,
+    getMetricGroup,
     getTodayISODate,
     parseDurationToMinutes,
   };
