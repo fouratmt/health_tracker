@@ -125,10 +125,6 @@
     };
   }
 
-  function shouldOfferInstall() {
-    return !isStandaloneApp() && window.sessionStorage.getItem(INSTALL_PROMPT_SESSION_KEY) !== "true";
-  }
-
   function updateInstallPromptCopy() {
     const copy = getInstallPromptCopy();
 
@@ -148,7 +144,7 @@
     updateInstallPromptCopy();
     installButton.hidden = false;
 
-    if (force || shouldOfferInstall()) {
+    if (force) {
       prompt.hidden = false;
     }
   }
@@ -211,10 +207,6 @@
       hideInstallPrompt();
       installButton.hidden = true;
     });
-
-    window.setTimeout(function () {
-      showInstallPrompt(false);
-    }, 1000);
   }
 
   function registerServiceWorker() {
