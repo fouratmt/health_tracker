@@ -13,13 +13,14 @@ Lightweight static browser app for daily health accountability tracking with a l
 
 ## Developer Flow
 
-This project uses a small `just` workflow instead of a build system.
+This project uses a small `just` workflow instead of a build system. Local serving is handled by uvicorn through `uvx`; no virtualenv or dependency install step is required.
 
 - `just`: list available recipes
-- `just open`: open the app directly from disk
-- `just serve`: serve the project locally at `http://127.0.0.1:9292`
-- `just check`: run JavaScript syntax checks
-- `just dev`: run checks, then start the local static server
+- `just dev`: serve the project locally at `http://127.0.0.1:9292`
+- `just serve`: alias for `just dev`
+- `just run`: alias for `just dev`
+- `just check`: compile-check the local ASGI dev server
+- `just doctor`: print local tool versions
 
 ## Project Structure
 
@@ -28,6 +29,7 @@ This project uses a small `just` workflow instead of a build system.
 - `docs/technical-architecture.md`: high-level technical architecture
 - `docs/implementation-tracker.md`: current implementation status and known gaps
 - `Justfile`: developer commands for local usage
+- `dev_server.py`: uvicorn ASGI static-file server for local development
 - `index.html`: app entry point
 - `css/styles.css`: app styles
 - `js/constants.js`: metric and goal defaults
@@ -40,7 +42,7 @@ This project uses a small `just` workflow instead of a build system.
 
 ## Runtime Constraints
 
-- no backend
+- no production backend
 - no login
 - no build step
 - runs directly from disk via `file://`
@@ -50,13 +52,13 @@ This project uses a small `just` workflow instead of a build system.
 
 ## Local Usage
 
-Open [index.html](/Users/fourat/projects/perso/personnal_health_tracker/index.html) in a browser.
-
-For PWA install and offline testing, use the local dev server:
+Use the local dev server:
 
 ```sh
 just dev
 ```
+
+Then open `http://127.0.0.1:9292`.
 
 ## Hosting
 

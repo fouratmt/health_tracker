@@ -1,38 +1,24 @@
 set shell := ["zsh", "-eu", "-c"]
 
-alias serve := run
-alias serve-uvx := run-uvx
+host := "127.0.0.1"
+port := "9292"
+
+alias run := dev
+alias serve := dev
 
 [default]
 help:
   @just --list
 
-open:
-  @open index.html
-
-run host="127.0.0.1" port="9292":
-  @echo "Serving http://{{host}}:{{port}} with python3"
-  @python3 -m http.server {{port}} --bind {{host}}
-
-run-uvx host="127.0.0.1" port="9292":
-  @echo "Serving http://{{host}}:{{port}} with uvx"
-  @uvx python -m http.server {{port}} --bind {{host}}
+dev host=host port=port:
+  @echo "Serving http://{{host}}:{{port}} with uvicorn"
+  @uvx --from uvicorn uvicorn dev_server:app --host {{host}} --port {{port}} --reload
 
 check:
-  @echo "Checking browser scripts with Node"
-  @rg --files -g '*.js' js | while IFS= read -r file; do \
-    node --check "$file"; \
-  done
-
-dev: check
-  @echo "Serving http://127.0.0.1:9292 with python3"
-  @python3 -m http.server 9292 --bind 127.0.0.1
+  @echo "Checking dev server"
+  @uvx --from uvicorn python -m py_compile dev_server.py
 
 doctor:
   @just --version
   @uvx --version
-  @python3 --version
-  @node --version
-
-tree:
-  @find . -maxdepth 2 -type f | sort
+  @uvx --from uvicorn uvicorn --version
