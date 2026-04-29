@@ -34,7 +34,7 @@ It should feel:
 
 ### Visual Direction
 
-The product should use a light-first palette with a white background, blue accents, and black anchors, while still providing a dark-mode toggle.
+The product should use a light-first palette with white surfaces, blue primary actions, black text anchors, and restrained supporting tones for sleep, nutrition, and movement. It should still provide a dark-mode toggle.
 
 Reasoning:
 
@@ -42,6 +42,7 @@ Reasoning:
 - the default mode should stay bright and easy to scan during the day
 - contrast should make hits, misses, and summaries easy to scan
 - the visual system should reinforce private self-audit, not lifestyle branding
+- mobile and tablet layouts should prioritize thumb-friendly navigation, readable cards, and compact check-in controls
 
 ## Product Principles
 
@@ -91,6 +92,7 @@ At any moment, the app should answer:
 - Am I on track this week?
 - Am I on track this month?
 - Which area is slipping?
+- Which marker has been consistent over the last several weeks?
 
 ### 6. Lightweight Gamification
 
@@ -141,6 +143,7 @@ The MVP must support:
 - streak tracking
 - weekly and monthly adherence summaries
 - trend visibility for key metrics
+- installable PWA behavior when served from `localhost` or HTTPS
 
 ### Recommended MVP Metrics
 
@@ -245,6 +248,8 @@ The MVP should stay limited to four screens:
 - Progress
 - Goals / Settings
 
+The current app keeps those four screens in one static page and adds a browser install prompt surface instead of introducing onboarding or account setup.
+
 ## Non-Goals
 
 The following should remain out of scope for the first version:
@@ -258,6 +263,19 @@ The following should remain out of scope for the first version:
 - phase-based plans
 - badges and collectible mechanics
 - social features
+
+## Current Implementation Notes
+
+The app is currently implemented as a static local-first browser app with:
+
+- dashboard summary cards, marker group cards, goal pacing, attention areas, and recent entries
+- daily check-in editing by date, including previous and next day controls
+- progress trend cards and a 12-week marker streak map for workout, steps, sleep, and no sugar
+- goals and data portability controls
+- light and dark themes stored in local state
+- PWA manifest, app icons, service worker caching, and browser-specific install guidance
+
+Direct `file://` usage remains supported for the core app shell and local storage. PWA install and service-worker offline caching require `localhost` or HTTPS because browsers do not register service workers from `file://`.
 
 ## Final Product Summary
 

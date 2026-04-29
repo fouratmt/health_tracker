@@ -23,6 +23,7 @@ A self-directed user who already knows their health plan and wants a clean accou
 - must store all data locally on the device
 - must work when opened directly from disk via `file://`
 - must be hostable on GitHub Pages
+- must be installable as a PWA when served from `localhost` or HTTPS
 - must not require authentication or login
 - must be mobile-friendly
 - must optimize for very fast daily use
@@ -42,6 +43,7 @@ The product succeeds if a user can:
 - understand today, this week, and this month at a glance
 - trust that all displayed calculations are consistent and repeatable
 - use the app entirely offline after it is loaded
+- install or add the app to the home screen from Chrome, Firefox, or Safari when the browser supports it
 
 ## MVP Scope
 
@@ -55,6 +57,7 @@ The product succeeds if a user can:
 - adherence and streak calculations
 - weight trend summary
 - manual data import/export
+- PWA install metadata, app icons, offline shell caching, and browser-specific install guidance
 
 ### Out Of Scope
 
@@ -81,6 +84,10 @@ The product succeeds if a user can:
 ### Progress Visibility
 
 - As a user, I want the app to tell me if I am on track this week and month without interpretation.
+
+### Installable Use
+
+- As a user, I want to install the app or add it to my home screen so the tracker feels like a small private utility rather than a website I need to find again.
 
 ### Drift Detection
 
@@ -163,6 +170,7 @@ The progress view must display:
 - recent bedtime visibility
 - recent steps change
 - slipping metrics summary
+- 12-week marker history for workout, steps, sleep, and no sugar
 
 ### FR7. Local Persistence
 
@@ -181,11 +189,23 @@ The app must:
 - provide a dark-mode toggle
 - persist the active theme locally so it survives reloads and data export or import
 
+### FR10. PWA Install and Offline Shell
+
+The app must:
+
+- include a valid web app manifest
+- include install icons for Chromium, Safari, and Firefox surfaces
+- register a service worker when served from a secure context or `localhost`
+- cache the app shell for repeat use without network access
+- expose an install action in the UI
+- use the native Chromium install prompt when `beforeinstallprompt` is available
+- show Safari and Firefox add-to-home-screen guidance when native prompting is not available
+
 ## Non-Functional Requirements
 
 ### NFR1. Direct Browser Usage
 
-The app must work when the user opens `index.html` directly from local disk in a modern browser.
+The core app must work when the user opens `index.html` directly from local disk in a modern browser. Service-worker caching and browser install behavior are not expected under `file://`.
 
 ### NFR2. No Build Requirement
 
@@ -201,7 +221,15 @@ All scoring and status outputs must be derived from explicit client-side rules w
 
 ### NFR5. Offline-First
 
-The core application must work without network access after the static files are available locally.
+The core application must work without network access after the static files are available locally. When served from `localhost` or HTTPS, the service worker must cache the shell for repeat offline launches.
+
+### NFR6. Browser Install Compatibility
+
+The app must remain install-friendly in current Chrome, Firefox, and Safari behavior:
+
+- Chrome and other Chromium browsers should receive native install prompting when the browser exposes it.
+- Safari should receive clear add-to-home-screen guidance.
+- Firefox should receive clear install or add-to-home-screen guidance where the browser exposes that option.
 
 ## Data Requirements
 
@@ -297,3 +325,12 @@ When there is no current weekly or monthly adherence data yet, the app should de
 ### Portability
 
 - app works when opened from local disk
+- user can export a JSON backup
+- user can import that backup in another browser session
+
+### PWA
+
+- manifest is available at `manifest.webmanifest`
+- service worker registers without console errors on `localhost` or HTTPS
+- install UI appears outside standalone mode
+- Safari and Firefox guidance is available when native install prompting is unavailable

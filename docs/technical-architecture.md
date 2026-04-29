@@ -5,7 +5,7 @@
 This project is a no-backend static web application designed to run in two modes:
 
 - directly from disk via `file://`
-- as a static deployment on GitHub Pages
+- as a local or hosted static deployment through `localhost` or HTTPS, including GitHub Pages
 
 The architecture therefore avoids:
 
@@ -22,6 +22,7 @@ The architecture therefore avoids:
 - preserve compatibility with direct local file usage
 - store all user data locally
 - remain simple enough to inspect and maintain without a framework
+- provide installable PWA behavior where browser security rules allow service workers
 
 ## High-Level Design
 
@@ -31,6 +32,7 @@ The application uses a client-only architecture with four layers:
 2. Application orchestration layer
 3. Domain calculation layer
 4. Persistence layer
+5. PWA shell layer
 
 ## Layer Breakdown
 
@@ -49,6 +51,7 @@ Responsibilities:
 - display status and summaries
 - apply the light-first white, blue, and black visual system
 - support a persistent dark-mode override
+- expose browser install controls and install guidance
 
 Constraints:
 
@@ -69,6 +72,8 @@ Responsibilities:
 - call calculation functions
 - render computed outputs into the DOM
 - handle import and export actions
+- handle browser install prompts and browser-specific guidance
+- register the service worker when available
 - populate and edit per-day logs including sleep duration, sleep score, bedtime, water, and no-sugar tracking
 
 This layer should contain wiring and UI flow logic, not business rules.
@@ -107,6 +112,26 @@ Responsibilities:
 - persist theme preferences together with the rest of the app state
 - export current data snapshot
 
+### 5. PWA Shell Layer
+
+Files:
+
+- `manifest.webmanifest`
+- `service-worker.js`
+- `assets/icons/`
+
+Responsibilities:
+
+- describe the app to browser install surfaces
+- provide Chromium, Safari, and Firefox-compatible icons
+- cache the app shell for repeat offline launches
+- keep PWA behavior optional so direct `file://` usage still works for the core app
+
+Constraints:
+
+- service workers only register on `localhost` or secure origins such as HTTPS
+- install prompting is browser-specific; Chromium exposes a native prompt event, while Safari and Firefox require user-facing guidance
+
 ## Runtime Model
 
 ### Bootstrap Flow
@@ -116,7 +141,8 @@ Responsibilities:
 3. `app.js` requests persisted data from `storage.js`
 4. app state is hydrated with goals and logs
 5. `calculations.js` derives summaries
-6. UI is rendered
+6. PWA install handlers and service-worker registration are initialized when supported
+7. UI is rendered
 
 ### Save Flow
 
@@ -205,8 +231,10 @@ Core calculation outputs:
 - weekly adherence ratio
 - monthly adherence ratio
 - workout streak
+- 12-week marker streak map for workout, steps, sleep, and no sugar
 - slipping metrics
 - weight trend
+- metric trend snapshots for weight, steps, sleep duration, and sleep score
 - overall status
 
 ## UI Structure
@@ -227,6 +255,8 @@ This avoids routing complexity and keeps compatibility with `file://`.
 - use large tap targets
 - keep the most common action, daily check-in, within easy reach
 - avoid hover-only interactions
+- keep tab navigation thumb-friendly on phone-width screens
+- allow dense visualizations such as the marker heatmap to scroll horizontally instead of shrinking until unreadable
 
 ## Reliability Strategy
 
@@ -241,7 +271,22 @@ This avoids routing complexity and keeps compatibility with `file://`.
 
 ### Local Disk
 
-The user can open `index.html` directly in a browser.
+The user can open `index.html` directly in a browser. Core logging, calculations, local storage, theme switching, and import/export work in this mode.
+
+Limitations:
+
+- service workers do not register under `file://`
+- PWA install prompts are not expected under `file://`
+
+### Local Dev Server
+
+The user can run `just dev` or `just serve` to serve the app at `http://127.0.0.1:9292`.
+
+This mode supports:
+
+- service-worker registration
+- offline shell caching
+- install prompt testing where the browser exposes installability
 
 ### GitHub Pages
 
@@ -249,16 +294,31 @@ The repository can be published as static files without code changes.
 
 No server rewrites, environment variables, or build outputs are required.
 
+This mode supports the PWA shell because GitHub Pages serves over HTTPS.
+
+## PWA Model
+
+The app uses:
+
+- `manifest.webmanifest` for name, display mode, start URL, theme color, categories, and icons
+- `service-worker.js` for app-shell caching and same-origin navigation fallback
+- `assets/icons/icon.svg`, `icon-192.png`, `icon-512.png`, `maskable-512.png`, and `apple-touch-icon.png`
+- `beforeinstallprompt` handling for Chromium browsers
+- fallback install guidance for Safari and Firefox
+
+The install prompt is intentionally a small utility surface, not an onboarding flow. It is hidden in standalone display mode and can be dismissed for the current browser session.
+
 ## Future Extensions
 
 These can be added later without changing the core architecture:
 
 - IndexedDB for larger local datasets
 - chart rendering library if still compatible with static hosting
-- installable PWA packaging
 - optional CSV export
 - configurable metric definitions
 - bedtime-target rules if the user wants them scored
+- automated calculation and storage tests
+- service-worker cache invalidation strategy tied to an app version constant
 
 ## Architectural Tradeoffs
 

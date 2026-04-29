@@ -1,6 +1,6 @@
 # Feature Implementation Tracker
 
-Last reviewed: 2026-03-28
+Last reviewed: 2026-04-30
 
 This tracker was derived from:
 
@@ -15,6 +15,8 @@ Snapshot:
 - Sleep tracking now stores duration as `HH:MM` alongside sleep score and bedtime.
 - Storage normalization now upgrades persisted data into schema version `5`.
 - Water and no sugar are always-on daily scored rules.
+- The app now includes a PWA manifest, service worker, app icons, install action, Chromium native install flow, and Safari/Firefox install guidance.
+- The mobile/tablet UI has been tightened with lower-radius cards, lighter shadows, thumb-friendly phone navigation, responsive check-in controls, and horizontally scrollable heatmaps.
 
 ## Status Legend
 
@@ -35,6 +37,8 @@ Snapshot:
 | Mobile-friendly layout | PRD constraints, NFR3 | Implemented | `css/styles.css` includes responsive card, tab, and form breakpoints | Still worth validating on a real phone |
 | Light-first white, blue, and black visual direction | Project Definition visual direction, PRD UX requirements | Implemented | CSS tokens now default to bright surfaces with blue and black accents | Visual polish can continue, but the documented direction now matches runtime |
 | Persistent dark-mode toggle | PRD FR9 | Implemented | Theme toggle updates a persisted `preferences.theme` value and swaps CSS variables at runtime | No system-theme auto-detection is implemented |
+| PWA app shell | PRD FR10, NFR5, NFR6 | Implemented | `manifest.webmanifest`, `service-worker.js`, and `assets/icons/` provide install metadata, icons, and app-shell caching | Requires `localhost` or HTTPS; not available from direct `file://` |
+| Browser install prompt / guidance | PRD FR10 | Implemented | `js/app.js` handles `beforeinstallprompt`, app-installed state, standalone mode, and fallback copy for Safari/Firefox | Browser support differs; Safari and Firefox require user action through browser UI |
 
 ## Goals and Metric Model
 
@@ -72,7 +76,7 @@ Snapshot:
 | Monthly adherence percentage | PRD FR4 | Implemented | `calculatePeriodAdherence()` computes current-month adherence | Rendered on the dashboard |
 | Weight trend summary | PRD FR6 | Implemented | `calculateWeightTrend()` compares first and last recorded weigh-ins | Still a simple text summary, not a chart |
 | Slipping metrics / drift detection | PRD core user stories, FR6 | Implemented | `calculateSlippingMetrics()` ranks the weakest recent metrics | Adapts automatically when sleep score is present |
-| Streak tracking | PRD FR3, FR5 | Partial | Workout streak is implemented and shown | Additional per-metric streaks are not yet surfaced |
+| Streak tracking | PRD FR3, FR5 | Implemented | Workout streak is shown on the dashboard, and the progress heatmap exposes marker streaks for workout, steps, sleep, and no sugar | Dashboard still emphasizes workout streak only |
 | Overall status model | PRD calculation rules | Implemented | `deriveOverallStatus()` uses symmetric 80% / 60% weekly and monthly adherence thresholds | Empty adherence data now defaults to `Slightly off track` instead of `On track` |
 
 ## Dashboard and Progress Visibility
@@ -85,6 +89,7 @@ Snapshot:
 | Goal pacing board | PRD FR4, FR5 | Implemented | Dashboard shows weekly workouts, monthly nutrition pacing, and the combined sleep target | End-to-end |
 | Recent entries summaries | PRD FR5, FR6 | Implemented | Dashboard and Progress lists show steps plus sleep duration, score, and bedtime context | End-to-end |
 | Progress trend snapshot | PRD FR6 | Implemented | Progress view shows directional cards for weight movement, steps, sleep duration, and sleep score | End-to-end |
+| Marker streak map | PRD FR6 | Implemented | Progress view renders a 12-week GitHub-style map for workout, steps, sleep, and no sugar | Mobile uses horizontal overflow to preserve cell readability |
 | Consistency board | Progress surface intent, FR6 | Implemented | Progress view renders adherence, workout pace, nutrition pace, sleep score target, and the always-on water and no-sugar rules | End-to-end |
 | Recent adherence history over time | PRD FR6 | Partial | The app exposes current adherence summaries and pacing boards | No day-by-day adherence chart or timeline yet |
 | Recent weight history | PRD FR6 | Partial | The app exposes trend text and latest weight summary | There is still no dedicated history list or chart of weigh-ins |
@@ -99,6 +104,7 @@ Snapshot:
 | JSON export | PRD FR8 | Implemented | `handleExport()` downloads the normalized state document | End-to-end |
 | JSON import | PRD FR8 | Implemented | `handleImport()` parses JSON and persists the normalized result | Invalid JSON still fails fast with a generic error message |
 | Deterministic client-side calculations | PRD NFR4 | Implemented | `js/calculations.js` remains pure and DOM-free | No automated tests yet to lock behavior down |
+| Offline repeat launches | PRD FR10, NFR5 | Implemented | Service worker caches the static app shell and same-origin assets | Needs browser-level manual testing across Chrome, Firefox, and Safari |
 
 ## Explicit MVP Non-Goals
 
@@ -118,7 +124,9 @@ Status for all items above: Out of scope
 
 ## Suggested Next Implementation Slices
 
-1. Add lightweight tests around `js/calculations.js` and `js/storage.js` so the version `3` schema, theme preference, and sleep rules stay stable.
-2. Surface more streaks beyond workouts, especially for sleep and nutrition adherence.
-3. Add a simple recent-history visualization for weight and adherence over time.
-4. Decide whether bedtime should remain informational or become a scored goal later.
+1. Add lightweight tests around `js/calculations.js`, `js/storage.js`, and service-worker cache-list integrity so the version `5` schema, theme preference, sleep rules, and PWA shell stay stable.
+2. Add a simple recent-history visualization for weight and adherence over time, likely a small no-dependency SVG or HTML chart that stays static-hosting friendly.
+3. Improve data management safety: confirmation before import replacement, clearer invalid-file errors, and optional “last exported” metadata.
+4. Decide whether bedtime should remain informational or become a scored goal with a configurable target.
+5. Run a real-device install/offline QA pass in Chrome, Firefox, and Safari, then document browser-specific findings.
+6. Consider an explicit app version constant shared by docs, cache name, and storage metadata so service-worker cache invalidation is less manual.

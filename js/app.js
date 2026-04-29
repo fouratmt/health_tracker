@@ -2,9 +2,11 @@
   const storage = window.HealthTrackerStorage;
   const calculations = window.HealthTrackerCalculations;
   const MARKER_GROUP_ORDER = ["Sleep", "Eat", "Move"];
+  const INSTALL_PROMPT_SESSION_KEY = "personal-health-tracker-install-dismissed";
 
   let state = storage.loadState();
   let selectedDate = calculations.getTodayISODate();
+  let deferredInstallPrompt = null;
 
   function byId(id) {
     return document.getElementById(id);
@@ -16,6 +18,10 @@
 
   function statusClass(status) {
     return `status-${status.toLowerCase().replace(/\s+/g, "-")}`;
+  }
+
+  function overallStatusClass(status) {
+    return `overall-status-text overall-${status.toLowerCase().replace(/\s+/g, "-")}`;
   }
 
   function normalizeNumber(value) {
@@ -38,8 +44,13 @@
   function applyTheme(theme) {
     const resolvedTheme = theme === "dark" ? "dark" : "light";
     const toggleButton = byId("theme-toggle");
+    const themeColor = document.querySelector('meta[name="theme-color"]');
 
     document.documentElement.dataset.theme = resolvedTheme;
+
+    if (themeColor) {
+      themeColor.setAttribute("content", resolvedTheme === "dark" ? "#030712" : "#f7fafc");
+    }
 
     if (!toggleButton) {
       return;
@@ -50,6 +61,170 @@
     toggleButton.setAttribute("aria-pressed", String(resolvedTheme === "dark"));
     toggleButton.setAttribute("aria-label", `Switch to ${nextLabel.toLowerCase()}`);
     toggleButton.title = `Switch to ${nextLabel.toLowerCase()}`;
+  }
+
+  function isStandaloneApp() {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: window-controls-overlay)").matches ||
+      window.navigator.standalone === true
+    );
+  }
+
+  function detectBrowser() {
+    const ua = window.navigator.userAgent.toLowerCase();
+
+    if (ua.includes("firefox") || ua.includes("fxios")) {
+      return "firefox";
+    }
+
+    if (
+      ua.includes("safari") &&
+      !ua.includes("chrome") &&
+      !ua.includes("crios") &&
+      !ua.includes("chromium") &&
+      !ua.includes("edg")
+    ) {
+      return "safari";
+    }
+
+    return "chromium";
+  }
+
+  function getInstallPromptCopy() {
+    const browser = detectBrowser();
+
+    if (deferredInstallPrompt) {
+      return {
+        title: "Install Health Tracker",
+        detail: "Use the browser install prompt to keep the app one tap away and available offline.",
+        action: "Install",
+      };
+    }
+
+    if (browser === "safari") {
+      return {
+        title: "Add Health Tracker to Home Screen",
+        detail: "In Safari, use Share, then Add to Home Screen. The app will open full-screen after it is added.",
+        action: "Got it",
+      };
+    }
+
+    if (browser === "firefox") {
+      return {
+        title: "Add Health Tracker to your device",
+        detail: "In Firefox, open the browser menu and choose Install or Add to Home screen when that option is available.",
+        action: "Got it",
+      };
+    }
+
+    return {
+      title: "Install Health Tracker",
+      detail: "Open the browser menu and choose Install app if the install button is not shown automatically.",
+      action: "Got it",
+    };
+  }
+
+  function shouldOfferInstall() {
+    return !isStandaloneApp() && window.sessionStorage.getItem(INSTALL_PROMPT_SESSION_KEY) !== "true";
+  }
+
+  function updateInstallPromptCopy() {
+    const copy = getInstallPromptCopy();
+
+    byId("install-prompt-title").textContent = copy.title;
+    byId("install-prompt-detail").textContent = copy.detail;
+    byId("install-prompt-action").textContent = copy.action;
+  }
+
+  function showInstallPrompt(force) {
+    const prompt = byId("install-prompt");
+    const installButton = byId("install-app");
+
+    if (!prompt || !installButton || isStandaloneApp()) {
+      return;
+    }
+
+    updateInstallPromptCopy();
+    installButton.hidden = false;
+
+    if (force || shouldOfferInstall()) {
+      prompt.hidden = false;
+    }
+  }
+
+  function hideInstallPrompt() {
+    byId("install-prompt").hidden = true;
+  }
+
+  async function handleInstallAction() {
+    if (!deferredInstallPrompt) {
+      window.sessionStorage.setItem(INSTALL_PROMPT_SESSION_KEY, "true");
+      hideInstallPrompt();
+      return;
+    }
+
+    deferredInstallPrompt.prompt();
+
+    try {
+      const choice = await deferredInstallPrompt.userChoice;
+      if (choice && choice.outcome === "accepted") {
+        hideInstallPrompt();
+      }
+    } catch (error) {
+      hideInstallPrompt();
+    }
+
+    deferredInstallPrompt = null;
+  }
+
+  function bindPwaInstallPrompt() {
+    const installButton = byId("install-app");
+    const installAction = byId("install-prompt-action");
+    const dismissButton = byId("install-prompt-dismiss");
+
+    if (isStandaloneApp()) {
+      installButton.hidden = true;
+      hideInstallPrompt();
+      return;
+    }
+
+    installButton.addEventListener("click", function () {
+      showInstallPrompt(true);
+    });
+
+    installAction.addEventListener("click", handleInstallAction);
+
+    dismissButton.addEventListener("click", function () {
+      window.sessionStorage.setItem(INSTALL_PROMPT_SESSION_KEY, "true");
+      hideInstallPrompt();
+    });
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      showInstallPrompt(false);
+    });
+
+    window.addEventListener("appinstalled", function () {
+      deferredInstallPrompt = null;
+      hideInstallPrompt();
+      installButton.hidden = true;
+    });
+
+    window.setTimeout(function () {
+      showInstallPrompt(false);
+    }, 1000);
+  }
+
+  function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) {
+      return;
+    }
+
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./service-worker.js").catch(function () {});
+    });
   }
 
   function setFeedback(id, text) {
@@ -768,7 +943,7 @@
     );
     const recentEntries = summary.recentEntries;
     byId("overall-status").textContent = summary.overallStatus;
-    byId("overall-status").className = statusClass(summary.overallStatus);
+    byId("overall-status").className = overallStatusClass(summary.overallStatus);
     byId("status-detail").textContent = summary.todayLog
       ? `${summary.todayEvaluation.hits} of ${summary.todayEvaluation.total} targets hit today.`
       : "No entry for today yet. The fastest path is the check-in tab.";
@@ -1088,6 +1263,8 @@
   function start() {
     bindTabs();
     bindForms();
+    bindPwaInstallPrompt();
+    registerServiceWorker();
     render();
   }
 

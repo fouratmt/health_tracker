@@ -8,6 +8,15 @@
       name="description"
       content="Static personal health accountability tracker with local-only storage."
     />
+    <meta name="theme-color" content="#f7fafc" />
+    <meta name="application-name" content="Health Tracker" />
+    <meta name="apple-mobile-web-app-title" content="Health Tracker" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
     <script>
       (function () {
         try {
@@ -29,12 +38,9 @@
         } catch (error) {}
       })();
     </script>
-    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/styles.css?v=20260430" />
   </head>
   <body>
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-
     <div class="app-shell">
       <header class="hero card hero-card">
         <div class="hero-copy-block">
@@ -63,6 +69,14 @@
               aria-pressed="false"
             >
               Dark mode
+            </button>
+            <button
+              id="install-app"
+              class="secondary-button install-action"
+              type="button"
+              hidden
+            >
+              Install app
             </button>
           </div>
           <ul class="hero-tags" aria-label="Product qualities">
@@ -568,9 +582,32 @@
       </main>
     </div>
 
-    <script src="js/constants.js"></script>
-    <script src="js/storage.js"></script>
-    <script src="js/calculations.js"></script>
-    <script src="js/app.js"></script>
+    <section
+      id="install-prompt"
+      class="install-prompt"
+      aria-live="polite"
+      aria-label="Install app"
+      hidden
+    >
+      <div class="install-prompt-copy">
+        <strong id="install-prompt-title">Install Health Tracker</strong>
+        <span id="install-prompt-detail">
+          Keep it one tap away and available offline.
+        </span>
+      </div>
+      <div class="install-prompt-actions">
+        <button id="install-prompt-action" class="primary-button" type="button">
+          Install
+        </button>
+        <button id="install-prompt-dismiss" class="ghost-button compact-button" type="button">
+          Not now
+        </button>
+      </div>
+    </section>
+
+    <script src="js/constants.js?v=20260430"></script>
+    <script src="js/storage.js?v=20260430"></script>
+    <script src="js/calculations.js?v=20260430"></script>
+    <script src="js/app.js?v=20260430"></script>
   </body>
 </html>

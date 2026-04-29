@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Personal Health Tracker</title>
+  <rect width="512" height="512" rx="112" fill="#f8fafc"/>
+  <path d="M86 334c34-66 77-99 128-99 33 0 58 13 83 39 14 15 28 23 42 23 28 0 56-30 87-90" fill="none" stroke="#2563eb" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M130 186h83l35-58 66 142 38-84h30" fill="none" stroke="#0f766e" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="132" cy="334" r="34" fill="#f59e0b"/>
+  <circle cx="386" cy="190" r="34" fill="#111827"/>
+</svg>

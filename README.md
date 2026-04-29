@@ -9,6 +9,7 @@ Lightweight static browser app for daily health accountability tracking with a l
 - dashboard and progress summaries for adherence, streaks, trend snapshots, slipping metrics, and recent entries
 - light mode by default with a persistent dark-mode toggle
 - local-only persistence with JSON export and import
+- PWA manifest, offline app shell, install prompt for Chromium browsers, and add-to-home-screen guidance for Safari and Firefox
 
 ## Developer Flow
 
@@ -33,6 +34,9 @@ This project uses a small `just` workflow instead of a build system.
 - `js/storage.js`: versioned local persistence and state normalization
 - `js/calculations.js`: deterministic scoring and status logic
 - `js/app.js`: UI wiring and rendering
+- `manifest.webmanifest`: install metadata for browser PWA support
+- `service-worker.js`: local offline shell cache
+- `assets/icons/`: install icons for Chromium, Safari, and Firefox
 
 ## Runtime Constraints
 
@@ -42,12 +46,13 @@ This project uses a small `just` workflow instead of a build system.
 - runs directly from disk via `file://`
 - deployable to GitHub Pages
 - stores all data locally in the browser
+- service-worker-based offline support requires `localhost` or HTTPS
 
 ## Local Usage
 
 Open [index.html](/Users/fourat/projects/perso/personnal_health_tracker/index.html) in a browser.
 
-For a local dev server, run:
+For PWA install and offline testing, use the local dev server:
 
 ```sh
 just dev
