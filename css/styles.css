@@ -905,6 +905,7 @@ h2 {
 .marker-panel-fields {
   display: grid;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .marker-panel-sleep {
@@ -996,15 +997,20 @@ h2 {
 .form-grid label {
   display: grid;
   gap: 0.48rem;
+  width: 100%;
+  max-width: 100%;
 }
 
 .form-grid input[type="date"],
 .form-grid input[type="number"],
 .form-grid input[type="time"] {
   display: block;
+  inline-size: 100%;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
   min-height: 3.25rem;
   padding: 0.95rem 1rem;
   color: var(--text);
